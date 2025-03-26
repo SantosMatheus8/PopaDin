@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PopaDin.Bkd.Ioc;
 
 namespace PopaDin.Bkd.Api;
 
@@ -91,7 +92,7 @@ public static class Program
             });
             c.DescribeAllParametersInCamelCase();
         });
-
+        services.RegisterDependencies(config);
         services.AddCors(options =>
         {
             options.AddPolicy("CorsPolicy", policy =>

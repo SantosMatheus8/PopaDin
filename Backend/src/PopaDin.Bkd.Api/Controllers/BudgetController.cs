@@ -24,11 +24,11 @@ public class BudgetController : ControllerBase
     [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BudgetResponse>> CreateBudget([FromBody] Budget createBudgetRequest)
+    public async Task<ActionResult<BudgetResponse>> CreateBudget([FromBody] CreateBudgetRequest createBudgetRequest)
     {
         try
         {
-            Budget budgetCreated = await _budgetService.CreateBudget(createBudgetRequest);
+            Budget budgetCreated = await _budgetService.CreateBudgetAsync(createBudgetRequest);
 
             BudgetResponse budgetResponse = new()
             {
@@ -37,7 +37,7 @@ public class BudgetController : ControllerBase
                 CurrentAmount = budgetCreated.CurrentAmount,
                 // UserId = budgetCreated.UserId,
                 // User = budgetCreated.User.Detailed(),
-                FinishAt = budgetCreated.FinishAt
+                // FinishAt = budgetCreated.FinishAt
             };
             return Ok(budgetResponse);
         }
@@ -47,71 +47,71 @@ public class BudgetController : ControllerBase
         }
     }
 
-    [HttpGet]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<Budget>>> GetUserBudgets()
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            List<Budget> userBudgets = await _budgetService.GetUserBudgets(int.Parse(userId));
-            return Ok(userBudgets);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
-    }
-
-    [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> FindBudgetById(int id)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Budget budget = await _budgetService.FindBudgetById(id, int.Parse(userId));
-            return Ok(budget);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
-    }
-    [HttpPut("{id}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> UpdateBudget([FromBody] Budget updateBudgetRequest,
-        int id)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Budget updatedBudget = await _budgetService.UpdateBudget(updateBudgetRequest, id, int.Parse(userId));
-            return Ok(updatedBudget);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
-    }
-
-    [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> DeleteBudget(int id)
-    {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Ok(await _budgetService.DeleteBudget(id, int.Parse(userId)));
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
-    }
+    // [HttpGet]
+    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    // public async Task<ActionResult<List<Budget>>> GetUserBudgets()
+    // {
+    //     try
+    //     {
+    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //         List<Budget> userBudgets = await _budgetService.GetUserBudgets(int.Parse(userId));
+    //         return Ok(userBudgets);
+    //     }
+    //     catch (PopaBaseException ex)
+    //     {
+    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+    //     }
+    // }
+    //
+    // [HttpGet("{id}")]
+    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    // public async Task<ActionResult<Budget>> FindBudgetById(int id)
+    // {
+    //     try
+    //     {
+    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //         Budget budget = await _budgetService.FindBudgetById(id, int.Parse(userId));
+    //         return Ok(budget);
+    //     }
+    //     catch (PopaBaseException ex)
+    //     {
+    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+    //     }
+    // }
+    // [HttpPut("{id}")]
+    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    // public async Task<ActionResult<Budget>> UpdateBudget([FromBody] Budget updateBudgetRequest,
+    //     int id)
+    // {
+    //     try
+    //     {
+    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //         Budget updatedBudget = await _budgetService.UpdateBudget(updateBudgetRequest, id, int.Parse(userId));
+    //         return Ok(updatedBudget);
+    //     }
+    //     catch (PopaBaseException ex)
+    //     {
+    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+    //     }
+    // }
+    //
+    // [HttpDelete("{id}")]
+    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    // public async Task<ActionResult<Budget>> DeleteBudget(int id)
+    // {
+    //     try
+    //     {
+    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //         return Ok(await _budgetService.DeleteBudget(id, int.Parse(userId)));
+    //     }
+    //     catch (PopaBaseException ex)
+    //     {
+    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+    //     }
+    // }
 }

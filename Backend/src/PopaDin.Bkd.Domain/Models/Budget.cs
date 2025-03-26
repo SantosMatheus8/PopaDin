@@ -8,7 +8,7 @@ public class Budget
     public double CurrentAmount { get; set; }
     // public int UserId { get; set; }
     // public UserModel User { get; set; }
-    public DateTime FinishAt { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? FinishAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -11,9 +11,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\PopaDin.Bkd.Domain\PopaDin.Bkd.Domain.csproj"/>
-    <ProjectReference Include="..\PopaDin.Bkd.Infra\PopaDin.Bkd.Infra.csproj"/>
-    <ProjectReference Include="..\PopaDin.Bkd.Service\Ms.Bkd.Erp.Comercial.Service.csproj"/>
-  </ItemGroup>
+    <ItemGroup>
+        <!-- <ProjectReference Include="..\PopaDin.Bkd.Domain\PopaDin.Bkd.Domain.csproj"/> -->
+        <ProjectReference Include="..\PopaDin.Bkd.Infra\PopaDin.Bkd.Infra.csproj"/>
+        <ProjectReference Include="..\PopaDin.Bkd.Service\PopaDin.Bkd.Service.csproj"/>
+    </ItemGroup>
 </Project>

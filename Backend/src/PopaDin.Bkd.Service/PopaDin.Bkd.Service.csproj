@@ -12,6 +12,6 @@
   </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\PopaDin.Bkd.Domain.Domain\PopaDin.Bkd.Domain.Domain.csproj"/>
+        <ProjectReference Include="..\PopaDin.Bkd.Domain\PopaDin.Bkd.Domain.csproj"/>
     </ItemGroup>
 </Project>
