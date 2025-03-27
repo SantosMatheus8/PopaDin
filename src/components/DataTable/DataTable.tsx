@@ -4,19 +4,13 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ChevronsLeft,
-  ChevronLeft,
-  ChevronsRight,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DataTableColumnDef, DataTableProps } from "./DataTable.types";
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  pageCount,
   pageIndex,
   pageSize,
   isLoading = false,
@@ -28,8 +22,6 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     columns,
     data,
-    manualPagination: true,
-    pageCount,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange,
@@ -41,15 +33,15 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  const totalItems = pageCount * pageSize;
+  const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="rounded-md border border-gray-300">
+      <div className="rounded-md">
         <div className="relative w-full overflow-auto">
           <table className="w-full caption-bottom text-sm table-fixed">
-            <thead>
-              <tr className="border-b transition-colors border-gray-300">
+            <thead className="bg-gray-100 uppercase">
+              <tr>
                 {table.getHeaderGroups()[0].headers.map((headerGroup) => {
                   const columnDef = headerGroup.column
                     .columnDef as DataTableColumnDef<TData, TValue>;
@@ -60,6 +52,7 @@ export function DataTable<TData, TValue>({
                       style={{
                         width: columnDef.width,
                         minWidth: columnDef.width,
+                        textAlign: columnDef.align,
                       }}
                     >
                       {flexRender(
@@ -71,12 +64,11 @@ export function DataTable<TData, TValue>({
                 })}
               </tr>
             </thead>
-            <tbody className="[&_tr:last-child]:border-0">
+            <tbody>
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length} className="h-24 text-center">
                     <div className="flex justify-center items-center h-full">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       <span className="ml-2">Carregando...</span>
                     </div>
                   </td>
@@ -91,7 +83,7 @@ export function DataTable<TData, TValue>({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-gray-300 border-b transition-colors hover:bg-gray-100"
+                    className="border-gray-300 border-b transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => {
                       const columnDef = cell.column
@@ -104,6 +96,7 @@ export function DataTable<TData, TValue>({
                           style={{
                             width: columnDef.width,
                             minWidth: columnDef.width,
+                            textAlign: columnDef.align,
                           }}
                         >
                           {flexRender(
@@ -121,48 +114,41 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {showPagination && data.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex-1 text-sm text-muted-foreground">
-            {pageIndex * pageSize + 1} -{" "}
-            {Math.min((pageIndex + 1) * pageSize, totalItems)} de {totalItems}{" "}
-            itens
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage() || isLoading}
-              className="p-2 border border-gray-300 rounded-md disabled:cursor-not-allowed disabled:bg-gray-100 cursor-pointer"
+      {showPagination && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center order-1 sm:order-1">
+            <nav
+              className="flex items-center space-x-1 gap-4"
+              aria-label="Paginação"
             >
-              <ChevronsLeft className="h-4 w-5" />
-            </button>
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage() || isLoading}
-              className="p-2 border border-gray-300 rounded-md disabled:cursor-not-allowed disabled:bg-gray-100  cursor-pointer"
-            >
-              <ChevronLeft className="h-4 w-5" />
-            </button>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">Página</span>
-              <span className="text-sm font-medium">
-                {pageIndex + 1} de {Math.max(1, pageCount)}
-              </span>
-            </div>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage() || isLoading}
-              className="p-2 border border-gray-300 rounded-md disabled:cursor-not-allowed disabled:gray-300 disabled:bg-gray-100 cursor-pointer"
-            >
-              <ChevronRight className="h-4 w-5" />
-            </button>
-            <button
-              onClick={() => table.setPageIndex(pageCount - 1)}
-              disabled={!table.getCanNextPage() || isLoading}
-              className="p-2 border border-gray-300 rounded-md disabled:cursor-not-allowed disabled:gray-300 disabled:bg-gray-100 cursor-pointer"
-            >
-              <ChevronsRight className="h-4 w-5" />
-            </button>
+              <button
+                className="text-white bg-black w-8 h-8 flex items-center justify-center disabled:bg-gray-300 hover:bg-gray-500 disabled:cursor-default cursor-pointer"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <ChevronLeft />
+              </button>
+              {Array.from({ length: table.getPageCount() }, (_, index) => (
+                <button
+                  key={index}
+                  className={`w-8 h-8 flex items-center justify-center disabled:bg-primary-100  ${
+                    currentPage === index + 1
+                      ? "bg-black text-white cursor-default"
+                      : "hover:bg-gray-100 cursor-pointer"
+                  }`}
+                  onClick={() => table.setPageIndex(index)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+              <button
+                className="text-white bg-black w-8 h-8 flex items-center justify-center disabled:bg-gray-300 hover:bg-gray-500 disabled:cursor-default cursor-pointer"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <ChevronRight />
+              </button>
+            </nav>
           </div>
         </div>
       )}

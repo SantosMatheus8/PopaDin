@@ -5,12 +5,13 @@ export type DataTableColumnDef<TData, TValue = unknown> = ColumnDef<
   TValue
 > & {
   width?: string;
+  align?: "left" | "right" | "center";
 };
 
 export type DataTableProps<TData, TValue> = {
   columns: DataTableColumnDef<TData, TValue>[];
   data: TData[];
-  pageCount: number;
+  pageCount?: number;
   pageIndex: number;
   pageSize: number;
   isLoading?: boolean;
