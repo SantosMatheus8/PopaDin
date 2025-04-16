@@ -4,10 +4,11 @@ using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Service;
 
-public class BudgetService(IBudgetRepository repository) : IBudgetService
+public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> logger) : IBudgetService
 {
     public async Task<Budget> CreateBudgetAsync(Budget budget)
     {
-        return await repository.CriarBudgetAsync(budget);
+        logger.LogInformation("Criando Budget");
+        return await repository.CreateBudgetAsync(budget);
     }
 }

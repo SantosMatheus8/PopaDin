@@ -9,15 +9,15 @@ namespace PopaDin.Bkd.Infra.Repositories;
 
 public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository> logger) : IBudgetRepository
 {
-    public async Task<Budget> CriarBudgetAsync(Budget budget)
+    public async Task<Budget> CreateBudgetAsync(Budget budget)
     {
         await connection.OpenAsync();
         var transaction = await connection.BeginTransactionAsync();
         try
         {
+            logger.LogInformation("Query a ser executada: {Sql}.", BudgetQueries.CreateBudget);
             var budgetCreated = await connection.QueryAsync<Budget>(BudgetQueries.CreateBudget, new
             {
-                // Id = budget.Id,
                 Name = budget.Name,
                 Goal = budget.Goal,
                 CurrentAmount = budget.CurrentAmount,
@@ -26,12 +26,12 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             }, transaction);
             await transaction.CommitAsync();
 
-            return budgetCreated.FirstOrDefault();
+            return budgetCreated.FirstOrDefault()!;
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
             await transaction.RollbackAsync();
-            Console.WriteLine(ex);
+            logger.LogError("Erro ao Criar Budget : {Erro}", e);
             throw;
         }
     }
