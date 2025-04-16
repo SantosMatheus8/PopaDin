@@ -15,17 +15,18 @@ namespace PopaDin.Bkd.Infra.Repositories;
             var transaction = await connection.BeginTransactionAsync();
             try
             {
-                var budgetDb = await connection.QueryFirstAsync<Budget>(BudgetQueries.CreateBudget, new
+                var budgetDb = await connection.QueryAsync<Budget>(BudgetQueries.CreateBudget, new
                 {
-                    budget.Id,
-                    budget.Name,
-                    budget.Goal,
-                    budget.CurrentAmount,
+                    // Id = budget.Id,
+                    Name = budget.Name,
+                    Goal = budget.Goal,
+                    CurrentAmount = budget.CurrentAmount,
+                    FinishAt = DateTime.Now,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 }, transaction);
                 await transaction.CommitAsync();
-                return budgetDb;
+                return budgetDb.FirstOrDefault();
             }
             catch (Exception ex)
             {

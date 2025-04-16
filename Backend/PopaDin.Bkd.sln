@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Api", "src\PopaDin.Bkd.Api\PopaDin.Bkd.Api.csproj", "{25F1F761-AB84-41AA-95EB-0BF435D5AEE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Domain", "src\PopaDin.Bkd.Domain\PopaDin.Bkd.Domain.csproj", "{11951065-2ABF-4D0C-8324-7E5070E17C8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Infra", "src\PopaDin.Bkd.Infra\PopaDin.Bkd.Infra.csproj", "{992ED78A-D98F-4B5E-9BD6-855006EBC1D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.IoC", "src\PopaDin.Bkd.IoC\PopaDin.Bkd.IoC.csproj", "{AEECE725-5FA3-4AC1-B281-CB08074D8E16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Service", "src\PopaDin.Bkd.Service\PopaDin.Bkd.Service.csproj", "{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25F1F761-AB84-41AA-95EB-0BF435D5AEE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25F1F761-AB84-41AA-95EB-0BF435D5AEE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25F1F761-AB84-41AA-95EB-0BF435D5AEE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25F1F761-AB84-41AA-95EB-0BF435D5AEE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11951065-2ABF-4D0C-8324-7E5070E17C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11951065-2ABF-4D0C-8324-7E5070E17C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11951065-2ABF-4D0C-8324-7E5070E17C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11951065-2ABF-4D0C-8324-7E5070E17C8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{992ED78A-D98F-4B5E-9BD6-855006EBC1D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{992ED78A-D98F-4B5E-9BD6-855006EBC1D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{992ED78A-D98F-4B5E-9BD6-855006EBC1D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{992ED78A-D98F-4B5E-9BD6-855006EBC1D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEECE725-5FA3-4AC1-B281-CB08074D8E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEECE725-5FA3-4AC1-B281-CB08074D8E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEECE725-5FA3-4AC1-B281-CB08074D8E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEECE725-5FA3-4AC1-B281-CB08074D8E16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{25F1F761-AB84-41AA-95EB-0BF435D5AEE8} = {A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}
+		{11951065-2ABF-4D0C-8324-7E5070E17C8E} = {A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}
+		{992ED78A-D98F-4B5E-9BD6-855006EBC1D6} = {A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}
+		{AEECE725-5FA3-4AC1-B281-CB08074D8E16} = {A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}
+		{94DA9D5D-33E4-4DCC-8F96-7FB6D01CC27B} = {A3752FC1-A8F4-49D8-ABB0-C9727B6EB64D}
+	EndGlobalSection
+EndGlobal

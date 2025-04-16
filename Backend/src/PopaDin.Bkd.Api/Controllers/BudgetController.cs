@@ -5,10 +5,11 @@ using PopaDin.Bkd.Api.Dtos.Budget;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
+using Mapster;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
-[Authorize]
+// [Authorize]
 [Route("v1/[controller]")]
 [ApiController]
 public class BudgetController : ControllerBase
@@ -24,21 +25,26 @@ public class BudgetController : ControllerBase
     [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BudgetResponse>> CreateBudget([FromBody] CreateBudgetRequest createBudgetRequest)
+    public async Task<ActionResult<BudgetResponse>> CreateBudget(
+        [FromBody] CreateBudgetRequest createBudgetRequest
+    )
     {
         try
         {
             Budget budgetCreated = await _budgetService.CreateBudgetAsync(createBudgetRequest);
 
-            BudgetResponse budgetResponse = new()
-            {
-                Name = budgetCreated.Name,
-                Goal = budgetCreated.Goal,
-                CurrentAmount = budgetCreated.CurrentAmount,
-                // UserId = budgetCreated.UserId,
-                // User = budgetCreated.User.Detailed(),
-                // FinishAt = budgetCreated.FinishAt
-            };
+            var budgetResponse = budgetCreated.Adapt<List<BudgetResponse>>();
+
+            // BudgetResponse budgetResponse = new()
+            // {
+            //     Name = budgetCreated.Name,
+            //     Goal = budgetCreated.Goal,
+            //     CurrentAmount = budgetCreated.CurrentAmount,
+            //     // UserId = budgetCreated.UserId,
+            //     // User = budgetCreated.User.Detailed(),
+            //     // FinishAt = budgetCreated.FinishAt
+            // };
+            Console.WriteLine("================");
             return Ok(budgetResponse);
         }
         catch (PopaBaseException ex)
