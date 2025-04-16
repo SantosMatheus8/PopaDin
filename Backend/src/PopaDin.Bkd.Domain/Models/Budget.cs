@@ -2,7 +2,7 @@ namespace PopaDin.Bkd.Domain.Models;
 
 public class Budget
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }
     public string Name { get; set; }
     public double Goal { get; set; }
     public double CurrentAmount { get; set; }

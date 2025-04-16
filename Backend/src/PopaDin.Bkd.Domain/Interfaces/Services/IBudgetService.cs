@@ -1,11 +1,10 @@
-using PopaDin.Bkd.Api.Dtos.Budget;
 using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Domain.Interfaces.Services;
 
 public interface IBudgetService
 {
-    Task<Budget> CreateBudgetAsync(CreateBudgetRequest budget);
+    Task<Budget> CreateBudgetAsync(Budget budget);
     // Task<List<Budget>> GetUserBudgets(int userId);
     // Task<Budget> FindBudgetById(int id, int userId);
     // Task<Budget> UpdateBudget(Budget updateBudgetRequest, int id, int userId);

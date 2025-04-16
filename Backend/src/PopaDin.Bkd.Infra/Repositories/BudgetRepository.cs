@@ -7,34 +7,34 @@ using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
-    public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository> logger) : IBudgetRepository
+public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository> logger) : IBudgetRepository
+{
+    public async Task<Budget> CriarBudgetAsync(Budget budget)
     {
-        public async Task<Budget> CriarBudgetAsync(Budget budget)
+        await connection.OpenAsync();
+        var transaction = await connection.BeginTransactionAsync();
+        try
         {
-            await connection.OpenAsync();
-            var transaction = await connection.BeginTransactionAsync();
-            try
+            var budgetCreated = await connection.QueryAsync<Budget>(BudgetQueries.CreateBudget, new
             {
-                var budgetDb = await connection.QueryAsync<Budget>(BudgetQueries.CreateBudget, new
-                {
-                    // Id = budget.Id,
-                    Name = budget.Name,
-                    Goal = budget.Goal,
-                    CurrentAmount = budget.CurrentAmount,
-                    FinishAt = DateTime.Now,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
-                }, transaction);
-                await transaction.CommitAsync();
-                return budgetDb.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                Console.WriteLine(ex);
-                throw;
-            }
+                // Id = budget.Id,
+                Name = budget.Name,
+                Goal = budget.Goal,
+                CurrentAmount = budget.CurrentAmount,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            }, transaction);
+            await transaction.CommitAsync();
+
+            return budgetCreated.FirstOrDefault();
         }
-   
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            Console.WriteLine(ex);
+            throw;
+        }
     }
+
+}
 

@@ -24,7 +24,7 @@ CREATE TABLE Budget (
     Name NVARCHAR(255) NOT NULL,
     Goal DECIMAL(18, 2) NOT NULL,
     CurrentAmount DECIMAL(18, 2),
-    FinishAt DATETIME2 NOT NULL,
+    FinishAt DATETIME2,
     UserId INT NOT NULL,
     CreatedAt DATETIME2 NOT NULL,
     UpdatedAt DATETIME2 NOT NULL,

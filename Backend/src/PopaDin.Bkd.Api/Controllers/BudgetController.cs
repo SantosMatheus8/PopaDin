@@ -31,20 +31,10 @@ public class BudgetController : ControllerBase
     {
         try
         {
-            Budget budgetCreated = await _budgetService.CreateBudgetAsync(createBudgetRequest);
+            var budget = createBudgetRequest.Adapt<Budget>();
+            Budget budgetCreated = await _budgetService.CreateBudgetAsync(budget);
+            var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
 
-            var budgetResponse = budgetCreated.Adapt<List<BudgetResponse>>();
-
-            // BudgetResponse budgetResponse = new()
-            // {
-            //     Name = budgetCreated.Name,
-            //     Goal = budgetCreated.Goal,
-            //     CurrentAmount = budgetCreated.CurrentAmount,
-            //     // UserId = budgetCreated.UserId,
-            //     // User = budgetCreated.User.Detailed(),
-            //     // FinishAt = budgetCreated.FinishAt
-            // };
-            Console.WriteLine("================");
             return Ok(budgetResponse);
         }
         catch (PopaBaseException ex)
