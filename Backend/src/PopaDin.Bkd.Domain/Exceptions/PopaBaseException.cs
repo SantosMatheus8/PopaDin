@@ -1,6 +1,6 @@
 namespace PopaDin.Bkd.Domain.Exceptions;
 
-public abstract class PopaBaseException : ApplicationException
+public class PopaBaseException : Exception
 {
     public int StatusCode { get; set; }
 

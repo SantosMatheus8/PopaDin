@@ -1,3 +1,4 @@
+using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
@@ -9,6 +10,16 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     public async Task<Budget> CreateBudgetAsync(Budget budget)
     {
         logger.LogInformation("Criando Budget");
+
+        if (budget.CurrentAmount < 0)
+        {
+            throw new PopaBaseException("O valor atual deve ser maior que zero.", 422);
+        }
+        if (budget.Goal < 1)
+        {
+            throw new PopaBaseException("A meta deve ser maior que um.", 422);
+        }
+
         return await repository.CreateBudgetAsync(budget);
     }
 }

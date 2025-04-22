@@ -21,8 +21,14 @@ public class BudgetController : ControllerBase
         _budgetService = budgetService;
     }
 
+    /// <summary>
+    ///     Atraves dessa rota voce sera capaz de criar um budget
+    /// </summary>
+    /// <param name="createBudgetRequest">O objeto de requisicao para criar um budget</param>
+    /// <returns>O budget criado</returns>
+    /// <response code="201">Sucesso, e retorna um budget</response>
     [HttpPost]
-    [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BudgetResponse>> CreateBudget(
