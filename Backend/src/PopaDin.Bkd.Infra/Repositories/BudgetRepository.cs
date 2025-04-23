@@ -4,6 +4,11 @@ using Microsoft.Extensions.Logging;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
+using PopaDin.Bkd.Domain.Utils;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -36,5 +41,73 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
         }
     }
 
+    public async Task<PaginatedResult<Budget>> GetBudgetsAsync(ListBudgets listBudgets)
+    {
+        var query = AddQueryPagination(listBudgets);
+        var countQuery = AddFilters(listBudgets, BudgetQueries.Count);
+
+        logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listBudgets);
+
+        var result = await connection.QueryAsync<Budget>(
+            query, new
+            {
+                Id = listBudgets.Id,
+                Name = listBudgets.Name,
+                Goal = listBudgets.Goal,
+                CurrentAmount = listBudgets.CurrentAmount,
+                Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
+                listBudgets.ItemsPerPage
+            }
+        );
+
+        var totalLines = await connection.QuerySingleAsync<int>(countQuery, new
+        {
+            Id = listBudgets.Id,
+            Name = listBudgets.Name,
+            Goal = listBudgets.Goal,
+            CurrentAmount = listBudgets.CurrentAmount,
+            Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
+            listBudgets.ItemsPerPage
+        });
+
+
+        logger.LogInformation("Resultado: {@Resultado}. ", result);
+
+        return new PaginatedResult<Budget>
+        {
+            Lines = result.ToList(),
+            Page = listBudgets.Page,
+            TotalPages = (int)Math.Ceiling(totalLines / (double)listBudgets.ItemsPerPage),
+            TotalItens = totalLines,
+            PageSize = listBudgets.ItemsPerPage
+        };
+    }
+
+    private static string AddQueryPagination(ListBudgets listBudgets)
+    {
+        var query = AddFilters(listBudgets, BudgetQueries.ListBudgets);
+        query +=
+            @$"
+                ORDER BY 
+                {listBudgets.OrderBy.GetEnumDescription()} 
+                {listBudgets.OrderDirection.GetEnumDescription()} 
+                OFFSET @Offset 
+                ROWS FETCH NEXT @ItemsPerPage ROWS ONLY
+                ";
+        return query;
+    }
+    
+        private static string AddFilters(ListBudgets listBudgets, string query)
+    {
+        if (listBudgets.Id.HasValue)
+            query += " AND b.Id = @Id ";
+        if (!string.IsNullOrEmpty(listBudgets.Name))
+            query += " AND LOWER(b.Name) COLLATE Latin1_General_CI_AI LIKE '%' + @Name + '%' ";
+        if (listBudgets.Goal.HasValue)
+            query += " AND b.Goal = @Goal ";
+        if (listBudgets.CurrentAmount.HasValue)
+            query += " AND b.CurrentAmount = @CurrentAmount ";
+        return query;
+    }
 }
 

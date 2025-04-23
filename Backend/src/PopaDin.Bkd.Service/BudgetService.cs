@@ -22,4 +22,10 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
 
         return await repository.CreateBudgetAsync(budget);
     }
+
+    public async Task<PaginatedResult<Budget>> GetBudgetsAsync(ListBudgets listBudgets)
+    {
+        logger.LogInformation("Listando Budget");
+        return await repository.GetBudgetsAsync(listBudgets);
+    }
 }
