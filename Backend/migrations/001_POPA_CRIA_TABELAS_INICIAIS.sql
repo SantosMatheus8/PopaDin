@@ -1,0 +1,52 @@
+CREATE TABLE [User] (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    Email NVARCHAR(155) NOT NULL UNIQUE,
+    Password NVARCHAR(MAX) NOT NULL,
+    Balance DECIMAL(18, 2) DEFAULT 0,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL
+);
+
+CREATE TABLE Tag (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    Description NVARCHAR(MAX),
+    TagType INT,
+    UserId INT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL,
+    CONSTRAINT FK_Tag_User FOREIGN KEY (UserId) REFERENCES [User](Id)
+);
+
+CREATE TABLE Budget (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    Goal DECIMAL(18, 2) NOT NULL,
+    CurrentAmount DECIMAL(18, 2),
+    FinishAt DATETIME2,
+    UserId INT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL,
+    CONSTRAINT FK_Budget_User FOREIGN KEY (UserId) REFERENCES [User](Id)
+);
+
+CREATE TABLE Record (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Operation INT NOT NULL,
+    Value DECIMAL(18, 2) NOT NULL,
+    Frequency INT NOT NULL,
+    UserId INT NOT NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL,
+    CONSTRAINT FK_Record_User FOREIGN KEY (UserId) REFERENCES [User](Id)
+);
+
+CREATE TABLE RecordTag (
+    Id INT IDENTITY(1,1),
+    RecordId INT NOT NULL,
+    TagId INT NOT NULL,
+    PRIMARY KEY (RecordId, TagId),
+    CONSTRAINT FK_RecordTag_Record FOREIGN KEY (RecordId) REFERENCES Record(Id),
+    CONSTRAINT FK_RecordTag_Tag FOREIGN KEY (TagId) REFERENCES Tag(Id)
+);
