@@ -93,9 +93,9 @@ public static class Program
         {
             c.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = "API",
+                Title = "Popinha",
                 Version = "v1",
-                Description = "API"
+                Description = "Popinha Lindo"
             });
             c.DescribeAllParametersInCamelCase();
         });

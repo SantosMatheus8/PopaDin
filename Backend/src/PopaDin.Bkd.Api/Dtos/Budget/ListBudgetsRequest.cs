@@ -4,7 +4,7 @@ namespace PopaDin.Bkd.Domain.Models;
 
 public class ListBudgetsRequest
 {
-    public int? Id { get; set; }    
+    public int? Id { get; set; }
     public string? Name { get; set; }
     public decimal? Goal { get; set; }
     public decimal? CurrentAmount { get; set; }

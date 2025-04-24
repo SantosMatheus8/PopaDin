@@ -2,7 +2,7 @@ namespace PopaDin.Bkd.Infra.Queries;
 
 public static class BudgetQueries
 {
-  public const string CreateBudget = @"
+    public const string CreateBudget = @"
   INSERT INTO Budget 
           (Name, Goal, CurrentAmount, UserId, CreatedAt, UpdatedAt)
           OUTPUT 
@@ -18,7 +18,7 @@ public static class BudgetQueries
           (@Name, @Goal, @CurrentAmount, 2, @CreatedAt, @UpdatedAt)
            ";
 
-  public const string ListBudgets = @"
+    public const string ListBudgets = @"
         SELECT
             b.Id,
             b.Name As Name,
@@ -30,12 +30,32 @@ public static class BudgetQueries
         FROM Budget b WITH(NOLOCK)
         WHERE 1 = 1";
 
-public const string Count = @"
-    SELECT COUNT(*)
-    FROM Budget b WITH(NOLOCK)
-    WHERE 1=1";
-        
-            //     public const string Count = @"
-            // SELECT COUNT(*) 
-            // FROM Budget b WITH(NOLOCK)";
+    public const string Count = @"
+      SELECT COUNT(*)
+      FROM Budget b WITH(NOLOCK)
+      WHERE 1=1";
+
+    public const string FindBudgetById = @"
+        SELECT
+            b.Id,
+            b.Name As Name,
+            b.Goal As Goal,
+            b.CurrentAmount As CurrentAmount,
+            b.FinishAt As FinishAt,
+            b.CreatedAt As CreatedAt,
+            b.UpdatedAt As UpdatedAt
+        FROM Budget b WITH(NOLOCK)
+        WHERE b.Id = @BudgetId";
+
+    public const string UpdateBudget = @"
+        UPDATE Budget
+        SET Name = @Name,
+            Goal = @Goal,
+            CurrentAmount = @CurrentAmount,
+            UpdatedAt = @UpdatedAt
+        WHERE Id = @BudgetId";
+
+    public const string DeleteBudget = @"
+        DELETE FROM Budget
+        WHERE Id = @BudgetId";
 }

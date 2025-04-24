@@ -49,6 +49,12 @@ public class BudgetController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Atraves dessa rota voce sera capaz de buscar uma lista paginada de budgets
+    /// </summary>
+    /// <param name="listBudgetsRequest">O objeto de requisicao para buscar a lista paginada de budgets</param>
+    /// <returns>Uma lista paginada de budgets</returns>
+    /// <response code="200">Sucesso, e retorna uma lista paginada de budgets</response>
     [HttpGet]
     [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -67,54 +73,69 @@ public class BudgetController : ControllerBase
             return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
         }
     }
-    //
-    // [HttpGet("{id}")]
-    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    // public async Task<ActionResult<Budget>> FindBudgetById(int id)
-    // {
-    //     try
-    //     {
-    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    //         Budget budget = await _budgetService.FindBudgetById(id, int.Parse(userId));
-    //         return Ok(budget);
-    //     }
-    //     catch (PopaBaseException ex)
-    //     {
-    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-    //     }
-    // }
-    // [HttpPut("{id}")]
-    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    // public async Task<ActionResult<Budget>> UpdateBudget([FromBody] Budget updateBudgetRequest,
-    //     int id)
-    // {
-    //     try
-    //     {
-    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    //         Budget updatedBudget = await _budgetService.UpdateBudget(updateBudgetRequest, id, int.Parse(userId));
-    //         return Ok(updatedBudget);
-    //     }
-    //     catch (PopaBaseException ex)
-    //     {
-    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-    //     }
-    // }
-    //
-    // [HttpDelete("{id}")]
-    // [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
-    // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    // public async Task<ActionResult<Budget>> DeleteBudget(int id)
-    // {
-    //     try
-    //     {
-    //         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    //         return Ok(await _budgetService.DeleteBudget(id, int.Parse(userId)));
-    //     }
-    //     catch (PopaBaseException ex)
-    //     {
-    //         return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-    //     }
-    // }
+
+    /// <summary>
+    ///     Atraves dessa rota voce sera capaz de buscar um Budget
+    /// </summary>
+    /// <param name="budgetId">O codigo Budget</param>
+    /// <returns>O Budget consultado</returns>
+    /// <response code="200">Sucesso, e retorna um Budget</response>
+    [HttpGet("{budgetId:decimal}")]
+    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Budget>> FindBudgetById([FromRoute] decimal budgetId)
+    {
+        try
+        {
+            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Budget budget = await _budgetService.FindBudgetByIdAsync(budgetId);
+            return Ok(budget);
+        }
+        catch (PopaBaseException ex)
+        {
+            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+        }
+    }
+
+    [HttpPut("{budgetId:decimal}")]
+    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Budget>> UpdateBudget([FromBody] UpdateBudgetRequest updateBudgetRequest,
+        [FromRoute] decimal budgetId)
+    {
+        try
+        {
+            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var budget = updateBudgetRequest.Adapt<Budget>();
+            Budget updatedBudget = await _budgetService.UpdateBudgetAsync(budget, budgetId);
+            return Ok(updatedBudget);
+        }
+        catch (PopaBaseException ex)
+        {
+            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+        }
+    }
+
+    /// <summary>
+    ///     Atraves dessa rota voce sera capaz de deletar um budget
+    /// </summary>
+    /// <param name="budgetId">O codigo do budget</param>
+    /// <returns>Confirmação de deleção</returns>
+    /// <response code="204">Sucesso, e retorna confirmação de deleção</response>
+    [HttpDelete("{budgetId:decimal}")]
+    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Budget>> DeleteBudget([FromRoute] decimal budgetId)
+    {
+        try
+        {
+            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _budgetService.DeleteBudgetAsync(budgetId);
+            return NoContent();
+        }
+        catch (PopaBaseException ex)
+        {
+            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
+        }
+    }
 }
