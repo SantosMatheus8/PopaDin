@@ -17,5 +17,7 @@ public static class ServiceModuleExtensions
         services.TryAddSingleton(configuration);
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserRepository, UserRepository>();
     }
 }

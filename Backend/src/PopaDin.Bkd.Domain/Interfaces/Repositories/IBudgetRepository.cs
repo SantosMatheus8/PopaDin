@@ -1,4 +1,5 @@
 using PopaDin.Bkd.Domain.Models;
+using PopaDin.Bkd.Domain.Models.Budget;
 
 namespace PopaDin.Bkd.Domain.Interfaces.Repositories;
 

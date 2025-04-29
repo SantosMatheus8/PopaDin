@@ -1,4 +1,4 @@
-namespace PopaDin.Bkd.Domain.Models;
+namespace PopaDin.Bkd.Domain.Models.Budget;
 
 public class Budget
 {
