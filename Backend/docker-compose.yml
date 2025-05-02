@@ -36,6 +36,17 @@ services:
       done;
       echo '✅ Todas as migrations foram executadas';
       "
-      
+
+  popadin-api:
+      build:
+        context: .
+        dockerfile: src/PopaDin.Bkd.Api/Dockerfile
+      ports:
+        - "5285:5285"
+      environment:
+        - ASPNETCORE_URLS=http://+:5285/
+        - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+      restart: unless-stopped
+
 volumes:
   sqlserver_data:

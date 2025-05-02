@@ -15,30 +15,13 @@ public static class Program
 {
     public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        if (env.IsDevelopment())
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1");
-                c.RoutePrefix = string.Empty;
-            });
-        }
-        else
-        {
-            app.UseSwagger(c =>
-            {
-                c.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
-                {
-                    swaggerDoc.Servers = new[]
-                    {
-                        new OpenApiServer { Url = $"https://{httpReq.Host.Value}/PopaDin" }
-                    };
-                });
-            });
-            app.UseSwaggerUI(c => { c.SwaggerEndpoint("/PopaDin/swagger/v1/swagger.json", "v1"); });
-        }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1");
+            c.RoutePrefix = string.Empty;
+        });
 
         app.UseHealthChecks("/status-text");
         app.UseHealthChecks("/status-json", new HealthCheckOptions
