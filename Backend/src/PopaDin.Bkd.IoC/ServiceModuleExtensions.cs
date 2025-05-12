@@ -1,11 +1,10 @@
-﻿// using Dapper;
-// using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Service;
 using PopaDin.Bkd.Infra.Repositories;
+using PopaDin.Application.Services;
 
 namespace PopaDin.Bkd.Ioc;
 
@@ -19,5 +18,6 @@ public static class ServiceModuleExtensions
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuthService, AuthService>();
     }
 }

@@ -3,6 +3,7 @@ using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Models.User;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
+using PopaDin.Bkd.Domain.Helpers;
 
 namespace PopaDin.Bkd.Service;
 
@@ -16,7 +17,8 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         {
             throw new PopaBaseException("O valor deve ser maior que zero.", 422);
         }
-
+        user.Password = Hash.HashPassword(user.Password);
+        
         return await repository.CreateUserAsync(user);
     }
 

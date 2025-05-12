@@ -168,5 +168,17 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
             throw;
         }
     }
+
+    public async Task<User> FindUserByEmailAsync(string userEmail)
+    {
+        logger.LogInformation("Query executada: {Sql}.", UserQueries.FindUserByEmail);
+
+        var response = await connection.QueryFirstOrDefaultAsync<User>(UserQueries.FindUserByEmail,
+            new { UserEmail = userEmail });
+
+        logger.LogInformation("Resultado: {@Resultado}. ", response);
+
+        return response!;
+    }
 }
 
