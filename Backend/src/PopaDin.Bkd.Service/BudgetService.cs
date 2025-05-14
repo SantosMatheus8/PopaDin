@@ -2,6 +2,7 @@ using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
+using PopaDin.Bkd.Domain.Models.Budget;
 
 namespace PopaDin.Bkd.Service;
 

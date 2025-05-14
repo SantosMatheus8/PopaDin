@@ -1,13 +1,13 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Api.Dtos.Budget;
+namespace PopaDin.Bkd.Api.Dtos.User;
 
-public class ListBudgetsRequest
+public class ListUsersRequest
 {
     public int? Id { get; set; }
-    public string? Name { get; set; }
-    public decimal? Goal { get; set; }
-    public decimal? CurrentAmount { get; set; }
+    public string? Name { get; set; } = "";
+    public string? Email { get; set; } = "";
+    public double? Balance { get; set; }
     public OrderDirection OrderDirection { get; set; }
     public BudgetOrderBy OrderBy { get; set; }
     public int Page { get; set; } = 1;

@@ -6,6 +6,7 @@ using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
+using PopaDin.Bkd.Domain.Models.Budget;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
@@ -123,7 +124,7 @@ public class BudgetController : ControllerBase
     /// <returns>Confirmação de deleção</returns>
     /// <response code="204">Sucesso, e retorna confirmação de deleção</response>
     [HttpDelete("{budgetId:decimal}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Budget>> DeleteBudget([FromRoute] decimal budgetId)
     {

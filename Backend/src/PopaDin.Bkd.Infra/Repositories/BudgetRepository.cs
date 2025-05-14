@@ -5,6 +5,7 @@ using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
+using PopaDin.Bkd.Domain.Models.Budget;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
