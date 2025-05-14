@@ -7,6 +7,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using PopaDin.Bkd.Ioc;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace PopaDin.Bkd.Api;
 
@@ -38,9 +41,13 @@ public static class Program
             }
         });
 
+
+
         // app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRouting();
         app.UseCors();
+        app.UseAuthentication(); 
+        app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers().RequireCors();
@@ -81,7 +88,50 @@ public static class Program
                 Description = "Popinha Lindo"
             });
             c.DescribeAllParametersInCamelCase();
+
+                            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
         });
+
+                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidIssuer = string.Empty,
+                        ValidAudience = string.Empty,
+                        IssuerSigningKey = new SymmetricSecurityKey
+                            (Encoding.UTF8.GetBytes(config["AppSettings:Secret"])),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                    };
+
+                });
+
         services.RegisterDependencies(config);
         services.AddCors(options =>
         {
@@ -92,6 +142,7 @@ public static class Program
                     .AllowAnyHeader();
             });
         });
+
         services.AddMvc();
         services.AddHealthChecks();
     }

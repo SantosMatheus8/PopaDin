@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using PopaDin.Bkd.Api.Dtos.Budget;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
@@ -10,18 +8,11 @@ using PopaDin.Bkd.Domain.Models.Budget;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
-// [Authorize]
 [Route("v1/[controller]")]
 [ApiController]
-public class BudgetController : ControllerBase
+// [Authorize]
+public class BudgetController(IBudgetService budgetService) : ControllerBase
 {
-    private readonly IBudgetService _budgetService;
-
-    public BudgetController(IBudgetService budgetService)
-    {
-        _budgetService = budgetService;
-    }
-
     /// <summary>
     ///     Atraves dessa rota voce sera capaz de criar um budget
     /// </summary>
@@ -39,7 +30,7 @@ public class BudgetController : ControllerBase
         try
         {
             var budget = createBudgetRequest.Adapt<Budget>();
-            Budget budgetCreated = await _budgetService.CreateBudgetAsync(budget);
+            Budget budgetCreated = await budgetService.CreateBudgetAsync(budget);
             var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
 
             return Ok(budgetResponse);
@@ -66,7 +57,7 @@ public class BudgetController : ControllerBase
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var listBudgets = listBudgetsRequest.Adapt<ListBudgets>();
-            PaginatedResult<Budget> budgets = await _budgetService.GetBudgetsAsync(listBudgets);
+            PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets);
             return Ok(budgets);
         }
         catch (PopaBaseException ex)
@@ -89,7 +80,7 @@ public class BudgetController : ControllerBase
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Budget budget = await _budgetService.FindBudgetByIdAsync(budgetId);
+            Budget budget = await budgetService.FindBudgetByIdAsync(budgetId);
             return Ok(budget);
         }
         catch (PopaBaseException ex)
@@ -108,7 +99,7 @@ public class BudgetController : ControllerBase
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var budget = updateBudgetRequest.Adapt<Budget>();
-            Budget updatedBudget = await _budgetService.UpdateBudgetAsync(budget, budgetId);
+            Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId);
             return Ok(updatedBudget);
         }
         catch (PopaBaseException ex)
@@ -131,7 +122,7 @@ public class BudgetController : ControllerBase
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _budgetService.DeleteBudgetAsync(budgetId);
+            await budgetService.DeleteBudgetAsync(budgetId);
             return NoContent();
         }
         catch (PopaBaseException ex)

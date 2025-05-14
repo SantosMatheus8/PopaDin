@@ -54,4 +54,16 @@ public static class UserQueries
     public const string DeleteUser = @"
         DELETE FROM [User]
         WHERE Id = @UserId";
+
+        public const string FindUserByEmail = @"
+        SELECT
+            u.Id AS Id,
+            u.Name AS Name,
+            u.Email AS Email,
+            u.Password AS Password,
+            u.Balance AS Balance,
+            u.CreatedAt AS CreatedAt,
+            u.UpdatedAt AS UpdatedAt
+        FROM [User] u WITH(NOLOCK)
+        WHERE u.Email = @UserEmail";
 }
