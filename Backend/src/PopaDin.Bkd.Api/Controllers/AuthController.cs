@@ -1,19 +1,17 @@
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Auth;
+using PopaDin.Bkd.Api.Dtos.User;
 using PopaDin.Bkd.Domain.Exceptions;
+using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.API.Controllers
 {
     [Route("v1/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(IAuthService authService) : ControllerBase
     {
-        private readonly IAuthService _authService;
-        public AuthController(IAuthService authService)
-        {
-            _authService = authService;
-        }
 
         [HttpPost]
         [Route("login")]
@@ -24,7 +22,7 @@ namespace PopaDin.API.Controllers
         {
             try
             {
-                var token = await _authService.GenerateToken(loginRequest.Email, loginRequest.Password);
+                var token = await authService.GenerateToken(loginRequest.Email, loginRequest.Password);
                 var response = new LoginResponse { Access_token = token };
                 return Ok(response);
             }
@@ -35,16 +33,16 @@ namespace PopaDin.API.Controllers
         }
 
         // [Authorize]
-        // [HttpGet]
-        // [Route("profile")]
-        // [ProducesResponseType(typeof(UserTokenDTO), StatusCodes.Status200OK)]
-        // [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        // public async Task<ActionResult<UserTokenDTO>> GetProfile()
-        // {
-        //     var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        //     var userClaims = await _authService.GetProfile(token);
-
-        //     return Ok(userClaims);
-        // }
+        [HttpGet]
+        [Route("profile")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserResponse>> GetProfile()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            User user = await authService.GetProfile(token);
+            var userResponse = user.Adapt<UserResponse>();
+            return Ok(userResponse);
+        }
     }
 }

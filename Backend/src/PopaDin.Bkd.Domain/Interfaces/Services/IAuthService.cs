@@ -1,5 +1,7 @@
+using PopaDin.Bkd.Domain.Models.User;
+
 public interface IAuthService
 {
     Task<string> GenerateToken(string email, string password);
-    // Task<UserTokenDTO> GetProfile(string token);
+    Task<User> GetProfile(string token);
 }

@@ -2,6 +2,7 @@ using Microsoft.IdentityModel.Tokens;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Helpers;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
+using PopaDin.Bkd.Domain.Models.User;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -56,38 +57,39 @@ public class AuthService(IUserRepository repository, ILogger<AuthService> logger
         // return new LoginResponseDTO { Access_token = stringToken };
     }
 
-    // public async Task<UserTokenDTO> GetProfile(string token)
-    // {
+    public async Task<User> GetProfile(string token)
+    {
 
-    //     var tokenHandler = new JwtSecurityTokenHandler();
-    //     var configuration = new ConfigurationBuilder()
-    //         .SetBasePath(Directory.GetCurrentDirectory())
-    //         .AddJsonFile("appsettings.json")
-    //         .Build();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-    //     var secret = configuration["AppSettings:Secret"];
-    //     var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var secret = configuration["AppSettings:Secret"];
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 
-    //     var tokenValidationParameters = new TokenValidationParameters
-    //     {
-    //         ValidateIssuerSigningKey = true,
-    //         IssuerSigningKey = securityKey,
-    //         ValidateIssuer = false,
-    //         ValidateAudience = false
-    //     };
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = securityKey,
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
 
-    //     ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-    //     var tokenString = tokenHandler.WriteToken(validatedToken);
-    //     var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
+        ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+        var tokenString = tokenHandler.WriteToken(validatedToken);
+        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
 
-    //     var userClaims = new UserTokenDTO
-    //     {
-    //         Id = int.Parse(jwtToken.Claims.First(claim => claim.Type == "sub").Value),
-    //         Email = jwtToken.Claims.First(claim => claim.Type == "email").Value,
-    //         Name = jwtToken.Claims.First(claim => claim.Type == "name").Value,
-    //     };
-    //     userClaims.Balance = await _userRepository.GetBalance(userClaims.Id);
+        User user = await repository.FindUserByIdAsync(decimal.Parse(jwtToken.Claims.First(claim => claim.Type == "sub").Value));
+        // var userClaims = new UserResponse
+        // {
+        //     Id = int.Parse(jwtToken.Claims.First(claim => claim.Type == "sub").Value),
+        //     Email = jwtToken.Claims.First(claim => claim.Type == "email").Value,
+        //     Name = jwtToken.Claims.First(claim => claim.Type == "name").Value,
+        // };
+        // userClaims.Balance = await _userRepository.GetBalance(userClaims.Id);
 
-    //     return userClaims;
-    // }
+        return user;
+    }
 }

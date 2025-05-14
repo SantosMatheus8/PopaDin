@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using PopaDin.Bkd.Api.Dtos.User;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
@@ -13,15 +12,8 @@ namespace PopaDin.Bkd.Api.Controllers;
 // [Authorize]
 [Route("v1/[controller]")]
 [ApiController]
-public class UserController : ControllerBase
+public class UserController(IUserService userService) : ControllerBase
 {
-    private readonly IUserService _userService;
-
-    public UserController(IUserService userService)
-    {
-        _userService = userService;
-    }
-
     /// <summary>
     ///     Atraves dessa rota voce sera capaz de criar um user
     /// </summary>
@@ -39,7 +31,7 @@ public class UserController : ControllerBase
         try
         {
             var user = createUserRequest.Adapt<User>();
-            User userCreated = await _userService.CreateUserAsync(user);
+            User userCreated = await userService.CreateUserAsync(user);
             var userResponse = userCreated.Adapt<UserResponse>();
 
             return Ok(userResponse);
@@ -66,7 +58,7 @@ public class UserController : ControllerBase
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var listUsers = listUsersRequest.Adapt<ListUsers>();
-            PaginatedResult<User> users = await _userService.GetUsersAsync(listUsers);
+            PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
             var userResponse = users.Adapt<PaginatedResult<UserResponse>>();
             return Ok(userResponse);
         }
@@ -90,7 +82,7 @@ public class UserController : ControllerBase
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            User user = await _userService.FindUserByIdAsync(userId);
+            User user = await userService.FindUserByIdAsync(userId);
             var userResponse = user.Adapt<UserResponse>();
             return Ok(userResponse);
         }
@@ -110,7 +102,7 @@ public class UserController : ControllerBase
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = updateUserRequest.Adapt<User>();
-            User updatedUser = await _userService.UpdateUserAsync(user, userId);
+            User updatedUser = await userService.UpdateUserAsync(user, userId);
             var userResponse = updatedUser.Adapt<UserResponse>();
             return Ok(userResponse);
         }
@@ -134,7 +126,7 @@ public class UserController : ControllerBase
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _userService.DeleteUserAsync(userId);
+            await userService.DeleteUserAsync(userId);
             return NoContent();
         }
         catch (PopaBaseException ex)
