@@ -34,7 +34,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const colorStyles: Record<InputColort, string> = {
       primary:
-        "focus-visible:border-primary-900 focus-visible:ring-primary-900 border-primary-500",
+        "focus-visible:border-primary-300 focus-visible:ring-primary-300 border-primary-500",
       secondary:
         "focus-visible:border-secondary-900 focus-visible:ring-secondary-900 border-secondary-500",
       tertiary:
@@ -62,7 +62,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type={inputType}
             className={cn(
-              "flex h-12 w-full rounded-md px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
+              "flex h-12 w-full rounded-md px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-lg placeholder:font-semibold text-lg",
               variantStyles[variant],
               colorStyles[color],
               icon && variant !== "underlined" && "pl-10",
@@ -79,14 +79,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 hover:text-gray-500 cursor-pointer"
               aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff /> : <Eye />}
             </button>
           )}
         </div>
