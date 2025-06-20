@@ -2,7 +2,9 @@ version: '3.9'
 
 services:
   sqlserver-popa:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: sqlserver-popa
     environment:
       - ACCEPT_EULA=Y
@@ -16,10 +18,12 @@ services:
       test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "sqlserver-popa", "-U", "sa", "-P", "YourStrong!Passw0rd", "-Q", "SELECT @@VERSION" ]
       interval: 10s
       retries: 10
-      start_period: 60s
+      start_period: 10s
 
   migration-runner:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: migration-runner
     depends_on:
       sqlserver-popa:
@@ -28,14 +32,24 @@ services:
       - ./migrations:/migrations
     entrypoint: >
       /bin/bash -c "
-      echo 'Aguardando o banco de dados estar totalmente pronto...';
-      /migrations/wait-for-it.sh sqlserver-popa:1433 --timeout=300 --strict -- echo 'Banco de dados pronto!';
-      for file in /migrations/*.sql; do
-        echo 'Executando migration: \$file';
-        /opt/mssql-tools/bin/sqlcmd -S sqlserver-popa -U sa -P YourStrong!Passw0rd -i \$file;
-      done;
-      echo '✅ Todas as migrations foram executadas';
-      "
+        echo 'Aguardando o banco de dados estar totalmente pronto...';
+        /usr/local/bin/wait-for-it.sh sqlserver-popa:1433 --timeout=300 --strict -- echo 'Banco de dados pronto!';
+
+        # Find migration files and store them in an array
+        migration_files=(/migrations/*.sql)
+
+        # Check if the array is empty (no files found)
+        if [ \"$${migration_files[0]}\" = \"/migrations/*.sql\" ]; then
+            echo '⚠️ Nenhum arquivo de migration encontrado.';
+        else
+            echo 'Iniciando a execução das migrations...';
+            for file in \"$${migration_files[@]}\"; do
+                echo 'Executando migration: '$$file'';
+                /opt/mssql-tools/bin/sqlcmd -S sqlserver-popa -U sa -P 'YourStrong!Passw0rd' -i \"$$file\";
+            done;
+            echo '✅ Todas as migrations foram executadas';
+        fi
+        "
 
   popadin-api:
       build:
