@@ -52,15 +52,18 @@ services:
         "
 
   popadin-api:
-      build:
-        context: .
-        dockerfile: src/PopaDin.Bkd.Api/Dockerfile
-      ports:
-        - "5285:5285"
-      environment:
-        - ASPNETCORE_URLS=http://+:5285/
-        - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-      restart: unless-stopped
+    build:
+      context: .
+      dockerfile: src/PopaDin.Bkd.Api/Dockerfile
+    depends_on:
+      sqlserver-popa:
+        condition: service_healthy
+    ports:
+      - "5285:5285"
+    environment:
+      - ASPNETCORE_URLS=http://+:5285/
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+    restart: unless-stopped
 
 volumes:
   sqlserver_data:
