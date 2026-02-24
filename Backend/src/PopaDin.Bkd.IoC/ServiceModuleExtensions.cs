@@ -16,6 +16,10 @@ public static class ServiceModuleExtensions
         services.TryAddSingleton(configuration);
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<IRecordRepository, RecordRepository>();
+        services.AddScoped<IRecordService, RecordService>();
+        services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<ITagService, TagService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuthService, AuthService>();
