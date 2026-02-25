@@ -74,7 +74,7 @@ public static class Program
             return new SqlConnection(connectionString);
         });
         services.AddControllers();
-        services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Clear());
         services.AddRouting(options => options.LowercaseUrls = true);
         services.AddHttpClient();
         services.AddEndpointsApiExplorer();

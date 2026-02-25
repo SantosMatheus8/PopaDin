@@ -2,6 +2,6 @@ namespace PopaDin.Bkd.Domain.Enums;
 
 public enum OperationEnum
 {
-    Deposit,
-    Outflow
+    Outflow = 0,
+    Deposit = 1
 }
