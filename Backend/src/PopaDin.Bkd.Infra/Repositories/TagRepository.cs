@@ -108,6 +108,15 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
         return query;
     }
 
+    public async Task<List<Tag>> FindTagsByIdsAsync(List<int> ids)
+    {
+        logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagsByIds);
+
+        var result = await connection.QueryAsync<Tag>(TagQueries.FindTagsByIds, new { Ids = ids });
+
+        return result.ToList();
+    }
+
     public async Task<Tag> FindTagByIdAsync(decimal tagId)
     {
         logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagById);

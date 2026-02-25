@@ -13,14 +13,14 @@ namespace PopaDin.Bkd.Infra.Repositories;
 
 public class RecordRepository(SqlConnection connection, ILogger<RecordRepository> logger) : IRecordRepository
 {
-    public async Task<Record> CreateRecordAsync(Record record)
+    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds)
     {
         await connection.OpenAsync();
         var transaction = await connection.BeginTransactionAsync();
         try
         {
             logger.LogInformation("Query a ser executada: {Sql}.", RecordQueries.CreateRecord);
-            var recordCreated = await connection.QueryAsync<Record>(RecordQueries.CreateRecord, new
+            var recordCreated = await connection.QuerySingleAsync<Record>(RecordQueries.CreateRecord, new
             {
                 Operation = record.Operation,
                 Value = record.Value,
@@ -28,9 +28,18 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
+
+            if (tagIds.Count > 0)
+            {
+                logger.LogInformation("Query a ser executada: {Sql}.", RecordQueries.CreateRecordTag);
+                foreach (var tagId in tagIds)
+                    await connection.ExecuteAsync(RecordQueries.CreateRecordTag,
+                        new { RecordId = recordCreated.Id, TagId = tagId }, transaction);
+            }
+
             await transaction.CommitAsync();
 
-            return recordCreated.FirstOrDefault()!;
+            return recordCreated;
         }
         catch (Exception e)
         {

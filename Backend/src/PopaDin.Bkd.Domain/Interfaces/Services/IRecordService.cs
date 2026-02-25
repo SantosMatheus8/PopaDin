@@ -5,7 +5,7 @@ namespace PopaDin.Bkd.Domain.Interfaces.Services;
 
 public interface IRecordService
 {
-    Task<Record> CreateRecordAsync(Record record);
+    Task<Record> CreateRecordAsync(Record record, List<int> tagIds);
     Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords);
     Task<Record> FindRecordByIdAsync(decimal recordId);
     Task<Record> UpdateRecordAsync(Record updateRecordRequest, decimal recordId);

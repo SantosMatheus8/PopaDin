@@ -30,7 +30,7 @@ public class RecordController(IRecordService recordService) : ControllerBase
         try
         {
             var record = createRecordRequest.Adapt<Record>();
-            Record recordCreated = await recordService.CreateRecordAsync(record);
+            Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds);
             var recordResponse = recordCreated.Adapt<RecordResponse>();
 
             return Ok(recordResponse);

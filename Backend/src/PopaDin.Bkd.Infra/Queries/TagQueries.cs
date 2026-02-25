@@ -33,6 +33,11 @@ public static class TagQueries
       FROM Tag t WITH(NOLOCK)
       WHERE 1=1";
 
+    public const string FindTagsByIds = @"
+        SELECT t.Id
+        FROM Tag t WITH(NOLOCK)
+        WHERE t.Id IN @Ids";
+
     public const string FindTagById = @"
         SELECT
             b.Id,

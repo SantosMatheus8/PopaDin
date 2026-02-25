@@ -6,18 +6,27 @@ using PopaDin.Bkd.Domain.Models.Record;
 
 namespace PopaDin.Bkd.Service;
 
-public class RecordService(IRecordRepository repository, ILogger<RecordService> logger) : IRecordService
+public class RecordService(IRecordRepository repository, ITagRepository tagRepository, ILogger<RecordService> logger) : IRecordService
 {
-    public async Task<Record> CreateRecordAsync(Record record)
+    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds)
     {
         logger.LogInformation("Criando Record");
 
         if (record.Value < 0)
-        {
             throw new PopaBaseException("O valor deve ser maior que zero.", 422);
+
+        if (tagIds.Count > 0)
+        {
+            var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds);
+            var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
+            var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
+
+            if (missingIds.Count > 0)
+                throw new PopaBaseException($"As seguintes tags não existem: {string.Join(", ", missingIds)}", 404);
         }
 
-        return await repository.CreateRecordAsync(record);
+        var recordCreated = await repository.CreateRecordAsync(record, tagIds);
+        return await repository.FindRecordByIdAsync(recordCreated.Id!.Value);
     }
 
     public async Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords)
