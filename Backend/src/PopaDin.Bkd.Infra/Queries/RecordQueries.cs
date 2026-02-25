@@ -35,7 +35,7 @@ public static class RecordQueries
         WHERE 1 = 1";
     public const string Count = @"
       SELECT COUNT(*)
-      FROM Record b WITH(NOLOCK)
+      FROM Record r WITH(NOLOCK)
       WHERE 1=1";
 
     public const string FindRecordById = @"

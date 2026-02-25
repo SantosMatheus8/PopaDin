@@ -30,7 +30,7 @@ public static class TagQueries
 
     public const string Count = @"
       SELECT COUNT(*)
-      FROM Tag b WITH(NOLOCK)
+      FROM Tag t WITH(NOLOCK)
       WHERE 1=1";
 
     public const string FindTagById = @"

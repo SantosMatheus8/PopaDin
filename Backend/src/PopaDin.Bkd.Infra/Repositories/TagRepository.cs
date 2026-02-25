@@ -98,9 +98,13 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
     private static string AddFilters(ListTags listTags, string query)
     {
         if (listTags.Id.HasValue)
-            query += " AND b.Id = @Id ";
+            query += " AND t.Id = @Id ";
         if (listTags.TagType.HasValue)
-            query += " AND b.TagType = @TagType ";
+            query += " AND t.TagType = @TagType ";
+        if (!string.IsNullOrWhiteSpace(listTags.Name))
+            query += " AND t.Name LIKE '%' + @Name + '%' ";
+        if (!string.IsNullOrWhiteSpace(listTags.Description))
+            query += " AND t.Description LIKE '%' + @Description + '%' ";
         return query;
     }
 

@@ -109,7 +109,11 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
     private static string AddFilters(ListRecords listRecords, string query)
     {
         if (listRecords.Id.HasValue)
-            query += " AND b.Id = @Id ";
+            query += " AND r.Id = @Id ";
+        if (listRecords.Operation.HasValue)
+            query += " AND r.Operation = @Operation ";
+        if (listRecords.Frequency.HasValue)
+            query += " AND r.Frequency = @Frequency ";
         return query;
     }
 
