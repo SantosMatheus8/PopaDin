@@ -12,5 +12,4 @@ public class Tag
     // public UserModel? User { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    // public List<RecordTagModel> RecordTags { get; set; } = new List<RecordTagModel>();
 }

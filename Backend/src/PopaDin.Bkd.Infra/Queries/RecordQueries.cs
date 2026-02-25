@@ -20,14 +20,19 @@ public static class RecordQueries
     public const string ListRecords = @"
         SELECT
             r.Id,
-            r.Operation As Operation,
-            r.Value As Value,
-            r.Frequency As Frequency,
-            r.CreatedAt As CreatedAt,
-            r.UpdatedAt As UpdatedAt
+            r.Operation AS Operation,
+            r.Value AS Value,
+            r.Frequency AS Frequency,
+            r.CreatedAt AS CreatedAt,
+            r.UpdatedAt AS UpdatedAt,
+            t.Id AS TagId,
+            t.Id AS Id,
+            t.Name,
+            t.TagType
         FROM Record r WITH(NOLOCK)
+        LEFT JOIN RecordTag rt WITH(NOLOCK) ON rt.RecordId = r.Id
+        LEFT JOIN Tag t WITH(NOLOCK) ON t.Id = rt.TagId
         WHERE 1 = 1";
-
     public const string Count = @"
       SELECT COUNT(*)
       FROM Record b WITH(NOLOCK)
@@ -36,12 +41,18 @@ public static class RecordQueries
     public const string FindRecordById = @"
         SELECT
             b.Id,
-            b.Operation As Operation,
-            b.Value As Value,
-            b.Frequency As Frequency,
-            b.CreatedAt As CreatedAt,
-            b.UpdatedAt As UpdatedAt
+            b.Operation AS Operation,
+            b.Value AS Value,
+            b.Frequency AS Frequency,
+            b.CreatedAt AS CreatedAt,
+            b.UpdatedAt AS UpdatedAt,
+            t.Id AS TagId,
+            t.Id AS Id,
+            t.Name,
+            t.TagType
         FROM Record b WITH(NOLOCK)
+        LEFT JOIN RecordTag rt WITH(NOLOCK) ON rt.RecordId = b.Id
+        LEFT JOIN Tag t WITH(NOLOCK) ON t.Id = rt.TagId
         WHERE b.Id = @RecordId";
 
     public const string UpdateRecord = @"

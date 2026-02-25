@@ -10,5 +10,5 @@ public class RecordResponse
     public int Frequency { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    // public List<RecordTagDTO> RecordTags { get; set; }
+    public List<RecordTagResponse> Tags { get; set; } = new List<RecordTagResponse>();
 }

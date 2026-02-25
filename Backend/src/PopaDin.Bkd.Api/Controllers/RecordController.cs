@@ -48,17 +48,18 @@ public class RecordController(IRecordService recordService) : ControllerBase
     /// <returns>Uma lista paginada de records</returns>
     /// <response code="200">Sucesso, e retorna uma lista paginada de records</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Record), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<RecordResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedResult<Record>>> GetRecords([FromQuery] ListRecordsRequest listRecordsRequest)
+    public async Task<ActionResult<PaginatedResult<RecordResponse>>> GetRecords([FromQuery] ListRecordsRequest listRecordsRequest)
     {
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var listRecords = listRecordsRequest.Adapt<ListRecords>();
             PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords);
-            return Ok(records);
+            var recordsResponse = records.Adapt<PaginatedResult<RecordResponse>>();
+            return Ok(recordsResponse);
         }
         catch (PopaBaseException ex)
         {
@@ -73,15 +74,16 @@ public class RecordController(IRecordService recordService) : ControllerBase
     /// <returns>O Record consultado</returns>
     /// <response code="200">Sucesso, e retorna um Record</response>
     [HttpGet("{recordId:decimal}")]
-    [ProducesResponseType(typeof(Record), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Record>> FindRecordById([FromRoute] decimal recordId)
+    public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] decimal recordId)
     {
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Record record = await recordService.FindRecordByIdAsync(recordId);
-            return Ok(record);
+            var recordResponse = record.Adapt<RecordResponse>();
+            return Ok(recordResponse);
         }
         catch (PopaBaseException ex)
         {

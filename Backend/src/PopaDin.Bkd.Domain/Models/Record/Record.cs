@@ -8,9 +8,9 @@ public class Record
     public OperationEnum Operation { get; set; }
     public double Value { get; set; }
     public int Frequency { get; set; }
-    // public int UserId { get; set; }
-    // public UserModel User { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    // public List<RecordTagModel> RecordTags { get; set; } = new List<RecordTagModel>();
+    public List<Tag.Tag> Tags { get; set; } = new List<Tag.Tag>();
+    // public int UserId { get; set; }
+    // public UserModel User { get; set; }
 }

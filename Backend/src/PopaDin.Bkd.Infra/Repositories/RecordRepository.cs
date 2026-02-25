@@ -7,6 +7,7 @@ using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
 using PopaDin.Bkd.Domain.Models.Record;
 using PopaDin.Bkd.Domain.Enums;
+using PopaDin.Bkd.Domain.Models.Tag;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -46,19 +47,7 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
         logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listRecords);
 
-        var result = await connection.QueryAsync<Record>(
-            query, new
-            {
-                Id = listRecords.Id,
-                Operation = listRecords.Operation,
-                Value = listRecords.Value,
-                Frequency = listRecords.Frequency,
-                Offset = (listRecords.Page - 1) * listRecords.ItemsPerPage,
-                listRecords.ItemsPerPage
-            }
-        );
-
-        var totalLines = await connection.QuerySingleAsync<int>(countQuery, new
+        var parameters = new
         {
             Id = listRecords.Id,
             Operation = listRecords.Operation,
@@ -66,14 +55,36 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
             Frequency = listRecords.Frequency,
             Offset = (listRecords.Page - 1) * listRecords.ItemsPerPage,
             listRecords.ItemsPerPage
-        });
+        };
 
+        var recordDictionary = new Dictionary<int, Record>();
 
-        logger.LogInformation("Resultado: {@Resultado}. ", result);
+        await connection.QueryAsync<Record, Tag, Record>(
+            query,
+            (record, tag) =>
+            {
+                if (!recordDictionary.TryGetValue(record.Id!.Value, out var recordEntry))
+                {
+                    recordEntry = record;
+                    recordDictionary.Add(recordEntry.Id!.Value, recordEntry);
+                }
+
+                if (tag?.Id != null)
+                    recordEntry.Tags.Add(tag);
+
+                return recordEntry;
+            },
+            parameters,
+            splitOn: "TagId"
+        );
+
+        var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
+
+        logger.LogInformation("Resultado: {@Resultado}. ", recordDictionary.Values);
 
         return new PaginatedResult<Record>
         {
-            Lines = result.ToList(),
+            Lines = recordDictionary.Values.ToList(),
             Page = listRecords.Page,
             TotalPages = (int)Math.Ceiling(totalLines / (double)listRecords.ItemsPerPage),
             TotalItens = totalLines,
@@ -106,12 +117,32 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
     {
         logger.LogInformation("Query executada: {Sql}.", RecordQueries.FindRecordById);
 
-        var response = await connection.QueryFirstOrDefaultAsync<Record>(RecordQueries.FindRecordById,
-            new { RecordId = recordId });
+        var recordDictionary = new Dictionary<int, Record>();
 
-        logger.LogInformation("Resultado: {@Resultado}. ", response);
+        var response = await connection.QueryAsync<Record, Tag, Record>(
+            RecordQueries.FindRecordById,
+            (record, tag) =>
+            {
+                if (!recordDictionary.TryGetValue(record.Id!.Value, out var recordEntry))
+                {
+                    recordEntry = record;
+                    recordDictionary.Add(recordEntry.Id!.Value, recordEntry);
+                }
 
-        return response!;
+                if (tag?.Id != null)
+                    recordEntry.Tags.Add(tag);
+
+                return recordEntry;
+            },
+            new { RecordId = recordId },
+            splitOn: "TagId"
+        );
+
+        var result = recordDictionary.Values.FirstOrDefault();
+
+        logger.LogInformation("Resultado: {@Resultado}. ", result);
+
+        return result!;
     }
 
     public async Task UpdateRecordAsync(Record record)
