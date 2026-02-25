@@ -158,14 +158,14 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
         return result!;
     }
 
-    public async Task UpdateRecordAsync(Record record)
+    public async Task UpdateRecordAsync(Record record, List<int> tagIds)
     {
         await connection.OpenAsync();
         var transaction = await connection.BeginTransactionAsync();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", RecordQueries.UpdateRecord);
-            var response = await connection.ExecuteAsync(RecordQueries.UpdateRecord,
+            await connection.ExecuteAsync(RecordQueries.UpdateRecord,
                 new
                 {
                     RecordId = record.Id,
@@ -174,6 +174,19 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                     Frequency = record.Frequency,
                     UpdatedAt = DateTime.Now
                 }, transaction);
+
+            logger.LogInformation("Query executada: {Sql}.", RecordQueries.DeleteRecordTags);
+            await connection.ExecuteAsync(RecordQueries.DeleteRecordTags,
+                new { RecordId = record.Id }, transaction);
+
+            if (tagIds.Count > 0)
+            {
+                logger.LogInformation("Query executada: {Sql}.", RecordQueries.CreateRecordTag);
+                foreach (var tagId in tagIds)
+                    await connection.ExecuteAsync(RecordQueries.CreateRecordTag,
+                        new { RecordId = record.Id, TagId = tagId }, transaction);
+            }
+
             await transaction.CommitAsync();
         }
         catch (Exception e)

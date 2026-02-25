@@ -66,6 +66,9 @@ public static class RecordQueries
     public const string CreateRecordTag = @"
         INSERT INTO RecordTag (RecordId, TagId) VALUES (@RecordId, @TagId)";
 
+    public const string DeleteRecordTags = @"
+        DELETE FROM RecordTag WHERE RecordId = @RecordId";
+
     public const string DeleteRecord = @"
         DELETE FROM RecordTag WHERE RecordId = @RecordId;
         DELETE FROM Record WHERE Id = @RecordId;";

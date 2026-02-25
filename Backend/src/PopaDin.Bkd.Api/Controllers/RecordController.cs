@@ -92,17 +92,17 @@ public class RecordController(IRecordService recordService) : ControllerBase
     }
 
     [HttpPut("{recordId:decimal}")]
-    [ProducesResponseType(typeof(Record), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Record>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
+    public async Task<ActionResult<RecordResponse>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
         [FromRoute] decimal recordId)
     {
         try
         {
             // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var record = updateRecordRequest.Adapt<Record>();
-            Record updatedRecord = await recordService.UpdateRecordAsync(record, recordId);
-            return Ok(updatedRecord);
+            Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId);
+            return Ok(updatedRecord.Adapt<RecordResponse>());
         }
         catch (PopaBaseException ex)
         {

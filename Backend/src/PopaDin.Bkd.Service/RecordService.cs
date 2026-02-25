@@ -41,15 +41,25 @@ public class RecordService(IRecordRepository repository, ITagRepository tagRepos
         return await FindRecordOrThrowExceptionAsync(recordId);
     }
 
-    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, decimal recordId)
+    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, decimal recordId)
     {
         logger.LogInformation("Editando um Record");
         Record record = await FindRecordOrThrowExceptionAsync(recordId);
 
+        if (tagIds.Count > 0)
+        {
+            var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds);
+            var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
+            var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
+
+            if (missingIds.Count > 0)
+                throw new PopaBaseException($"As seguintes tags não existem: {string.Join(", ", missingIds)}", 404);
+        }
+
         record.Operation = updateRecordRequest.Operation;
         record.Value = updateRecordRequest.Value;
         record.Frequency = updateRecordRequest.Frequency;
-        await repository.UpdateRecordAsync(record);
+        await repository.UpdateRecordAsync(record, tagIds);
 
         return await repository.FindRecordByIdAsync(recordId);
     }
