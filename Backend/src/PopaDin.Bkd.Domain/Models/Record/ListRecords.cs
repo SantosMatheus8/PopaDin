@@ -6,7 +6,7 @@ public class ListRecords
 {
     public int? Id { get; set; }
     public double? Value { get; set; }
-    public int? Frequency { get; set; }   
+    public FrequencyEnum? Frequency { get; set; }
     public OperationEnum? Operation { get; set; }
     public OrderDirection OrderDirection { get; set; }
     public RecordOrderBy OrderBy { get; set; }

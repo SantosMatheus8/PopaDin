@@ -72,7 +72,7 @@ BEGIN
     VALUES (
         (@i % 2),
         RAND() * 1500,
-        ((@i - 1) % 5) + 1,
+        (@i % 5),
         ((@i - 1) % 40) + 1,
         DATEADD(DAY, -@i, GETDATE()),
         GETDATE()
