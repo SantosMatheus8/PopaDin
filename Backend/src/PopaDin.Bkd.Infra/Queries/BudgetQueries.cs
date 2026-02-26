@@ -10,11 +10,10 @@ public static class BudgetQueries
             INSERTED.Name AS Name,
             INSERTED.Goal AS Goal,
             INSERTED.FinishAt AS FinishAt,
-            INSERTED.UserId AS UserId,
             INSERTED.CreatedAt AS CreatedAt,
             INSERTED.UpdatedAt AS UpdatedAt
           VALUES
-          (@Name, @Goal, 2, @CreatedAt, @UpdatedAt)
+          (@Name, @Goal, @UserId, @CreatedAt, @UpdatedAt)
            ";
 
     public const string ListBudgets = @"
@@ -24,8 +23,16 @@ public static class BudgetQueries
             b.Goal As Goal,
             b.FinishAt As FinishAt,
             b.CreatedAt As CreatedAt,
-            b.UpdatedAt As UpdatedAt
+            b.UpdatedAt As UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name AS Name,
+            u.Email AS Email,
+            u.Balance AS Balance,
+            u.CreatedAt AS CreatedAt,
+            u.UpdatedAt AS UpdatedAt
         FROM Budget b WITH(NOLOCK)
+        INNER JOIN [User] u WITH(NOLOCK) ON b.UserId = u.Id
         WHERE 1 = 1";
 
     public const string Count = @"
@@ -40,9 +47,17 @@ public static class BudgetQueries
             b.Goal As Goal,
             b.FinishAt As FinishAt,
             b.CreatedAt As CreatedAt,
-            b.UpdatedAt As UpdatedAt
+            b.UpdatedAt As UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name AS Name,
+            u.Email AS Email,
+            u.Balance AS Balance,
+            u.CreatedAt AS CreatedAt,
+            u.UpdatedAt AS UpdatedAt
         FROM Budget b WITH(NOLOCK)
-        WHERE b.Id = @BudgetId";
+        INNER JOIN [User] u WITH(NOLOCK) ON b.UserId = u.Id
+        WHERE b.Id = @BudgetId AND b.UserId = @UserId";
 
     public const string UpdateBudget = @"
         UPDATE Budget

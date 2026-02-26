@@ -7,6 +7,7 @@ public class ListBudgets
     public int? Id { get; set; }
     public string? Name { get; set; }
     public decimal? Goal { get; set; }
+    public int UserId { get; set; }
     public OrderDirection OrderDirection { get; set; }
     public BudgetOrderBy OrderBy { get; set; }
     public int Page { get; set; } = 1;

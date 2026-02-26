@@ -46,12 +46,12 @@ public static class Program
 
         app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRouting();
-        app.UseCors();
-        app.UseAuthentication(); 
+        app.UseCors("CorsPolicy");
+        app.UseAuthentication();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {
-            endpoints.MapControllers().RequireCors();
+            endpoints.MapControllers().RequireCors("CorsPolicy");
             endpoints.MapHealthChecks("/health");
         });
     }
@@ -92,12 +92,12 @@ public static class Program
 
                             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Description = "Insira o token JWT (sem o prefixo 'Bearer')",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer",
-                    BearerFormat = "Bearer"
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -119,6 +119,7 @@ public static class Program
                  services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidIssuer = string.Empty,
@@ -170,9 +171,6 @@ public static class Program
 
             Configure(app, app.Environment);
 
-            app.UseCors();
-            app.UseAuthentication();
-            app.UseAuthorization();
             app.Run();
         }
         catch (Exception ex)

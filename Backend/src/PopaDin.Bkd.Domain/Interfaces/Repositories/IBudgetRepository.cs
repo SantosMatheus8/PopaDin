@@ -7,7 +7,7 @@ public interface IBudgetRepository
 {
     Task<Budget> CreateBudgetAsync(Budget budget);
     Task<PaginatedResult<Budget>> GetBudgetsAsync(ListBudgets listBudgets);
-    Task<Budget> FindBudgetByIdAsync(decimal budgetId);
+    Task<Budget> FindBudgetByIdAsync(decimal budgetId, decimal userId);
     Task UpdateBudgetAsync(Budget budget);
     Task DeleteBudgetAsync(decimal budgetId);
 }
