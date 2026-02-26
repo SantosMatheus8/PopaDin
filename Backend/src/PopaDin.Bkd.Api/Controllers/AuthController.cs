@@ -31,6 +31,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
         User user = await authService.GetProfile(token);
-        return Ok(user.Adapt<UserResponse>());
+        var userResponse = user.Adapt<UserResponse>();
+        return Ok(userResponse);
     }
 }

@@ -26,7 +26,8 @@ public class UserController(IUserService userService) : ControllerBase
     {
         var user = createUserRequest.Adapt<User>();
         User userCreated = await userService.CreateUserAsync(user);
-        return Ok(userCreated.Adapt<UserResponse>());
+        var userResponse = userCreated.Adapt<UserResponse>();
+        return Ok(userResponse);
     }
 
     /// <summary>
@@ -44,7 +45,8 @@ public class UserController(IUserService userService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var listUsers = listUsersRequest.Adapt<ListUsers>();
         PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
-        return Ok(users.Adapt<PaginatedResult<UserResponse>>());
+        var usersResponse = users.Adapt<PaginatedResult<UserResponse>>();
+        return Ok(usersResponse);
     }
 
     /// <summary>
@@ -60,7 +62,8 @@ public class UserController(IUserService userService) : ControllerBase
     {
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         User user = await userService.FindUserByIdAsync(userId);
-        return Ok(user.Adapt<UserResponse>());
+        var userResponse = user.Adapt<UserResponse>();
+        return Ok(userResponse);
     }
 
     [HttpPut("{userId:decimal}")]
@@ -72,7 +75,8 @@ public class UserController(IUserService userService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var user = updateUserRequest.Adapt<User>();
         User updatedUser = await userService.UpdateUserAsync(user, userId);
-        return Ok(updatedUser.Adapt<UserResponse>());
+        var userResponse = updatedUser.Adapt<UserResponse>();
+        return Ok(userResponse);
     }
 
     /// <summary>

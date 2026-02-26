@@ -26,7 +26,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
     {
         var record = createRecordRequest.Adapt<Record>();
         Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds);
-        return Ok(recordCreated.Adapt<RecordResponse>());
+        var recordResponse = recordCreated.Adapt<RecordResponse>();
+        return Ok(recordResponse);
     }
 
     /// <summary>
@@ -44,7 +45,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var listRecords = listRecordsRequest.Adapt<ListRecords>();
         PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords);
-        return Ok(records.Adapt<PaginatedResult<RecordResponse>>());
+        var recordsResponse = records.Adapt<PaginatedResult<RecordResponse>>();
+        return Ok(recordsResponse);
     }
 
     /// <summary>
@@ -60,7 +62,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
     {
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         Record record = await recordService.FindRecordByIdAsync(recordId);
-        return Ok(record.Adapt<RecordResponse>());
+        var recordResponse = record.Adapt<RecordResponse>();
+        return Ok(recordResponse);
     }
 
     [HttpPut("{recordId:decimal}")]
@@ -72,7 +75,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var record = updateRecordRequest.Adapt<Record>();
         Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId);
-        return Ok(updatedRecord.Adapt<RecordResponse>());
+        var recordResponse = updatedRecord.Adapt<RecordResponse>();
+        return Ok(recordResponse);
     }
 
     /// <summary>

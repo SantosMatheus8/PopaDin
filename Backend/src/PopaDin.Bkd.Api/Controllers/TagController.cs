@@ -26,7 +26,8 @@ public class TagController(ITagService tagService) : ControllerBase
     {
         var tag = createTagRequest.Adapt<Tag>();
         Tag tagCreated = await tagService.CreateTagAsync(tag);
-        return Ok(tagCreated.Adapt<TagResponse>());
+        var tagResponse = tagCreated.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     /// <summary>
@@ -44,7 +45,8 @@ public class TagController(ITagService tagService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var listTags = listTagsRequest.Adapt<ListTags>();
         PaginatedResult<Tag> tags = await tagService.GetTagsAsync(listTags);
-        return Ok(tags.Adapt<PaginatedResult<TagResponse>>());
+        var tagsResponse = tags.Adapt<PaginatedResult<TagResponse>>();
+        return Ok(tagsResponse);
     }
 
     /// <summary>
@@ -60,7 +62,8 @@ public class TagController(ITagService tagService) : ControllerBase
     {
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         Tag tag = await tagService.FindTagByIdAsync(tagId);
-        return Ok(tag.Adapt<TagResponse>());
+        var tagResponse = tag.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     [HttpPut("{tagId:decimal}")]
@@ -72,7 +75,8 @@ public class TagController(ITagService tagService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var tag = updateTagRequest.Adapt<Tag>();
         Tag updatedTag = await tagService.UpdateTagAsync(tag, tagId);
-        return Ok(updatedTag.Adapt<TagResponse>());
+        var tagResponse = updatedTag.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     /// <summary>

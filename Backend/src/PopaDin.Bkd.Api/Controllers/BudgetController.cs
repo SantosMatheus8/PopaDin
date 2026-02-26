@@ -26,7 +26,8 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     {
         var budget = createBudgetRequest.Adapt<Budget>();
         Budget budgetCreated = await budgetService.CreateBudgetAsync(budget);
-        return Ok(budgetCreated.Adapt<BudgetResponse>());
+        var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     /// <summary>
@@ -44,7 +45,8 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var listBudgets = listBudgetsRequest.Adapt<ListBudgets>();
         PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets);
-        return Ok(budgets.Adapt<PaginatedResult<BudgetResponse>>());
+        var budgetsResponse = budgets.Adapt<PaginatedResult<BudgetResponse>>();
+        return Ok(budgetsResponse);
     }
 
     /// <summary>
@@ -60,7 +62,8 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     {
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         Budget budget = await budgetService.FindBudgetByIdAsync(budgetId);
-        return Ok(budget.Adapt<BudgetResponse>());
+        var budgetResponse = budget.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     [HttpPut("{budgetId:decimal}")]
@@ -72,7 +75,8 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
         // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var budget = updateBudgetRequest.Adapt<Budget>();
         Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId);
-        return Ok(updatedBudget.Adapt<BudgetResponse>());
+        var budgetResponse = updatedBudget.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     /// <summary>
