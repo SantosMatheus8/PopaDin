@@ -29,7 +29,7 @@ BEGIN
     VALUES (
         CONCAT('Tag ', @i),
         CONCAT('Descrição da tag ', @i),
-        (@i % 5),
+        (@i % 2),
         CASE WHEN @i % 2 = 0 THEN @i ELSE NULL END,
         DATEADD(DAY, -@i, GETDATE()),
         GETDATE()
@@ -70,9 +70,9 @@ WHILE @i <= 40
 BEGIN
     INSERT INTO Record (Operation, Value, Frequency, UserId, CreatedAt, UpdatedAt)
     VALUES (
-        (@i % 3),
+        (@i % 2),
         RAND() * 1500,
-        ((@i - 1) % 5) + 1,
+        (@i % 5),
         ((@i - 1) % 40) + 1,
         DATEADD(DAY, -@i, GETDATE()),
         GETDATE()

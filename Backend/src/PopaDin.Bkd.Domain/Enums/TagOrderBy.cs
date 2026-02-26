@@ -4,15 +4,15 @@ using System.Text.Json.Serialization;
 namespace PopaDin.Bkd.Domain.Enums;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum UserOrderBy
+public enum TagOrderBy
 {
-    [Description("u.Id")]
+    [Description("t.Id")]
     Id,
-    [Description("u.Name")]
+    [Description("t.Name")]
     Name,
-    [Description("u.Goal")]
-    Email,
-    [Description("u.CurrentAmount")]
-    Balance
+    [Description("t.TagType")]
+    TagType,
+    [Description("t.CreatedAt")]
+    CreatedAt,
 }
 
