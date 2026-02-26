@@ -10,9 +10,9 @@ public enum UserOrderBy
     Id,
     [Description("u.Name")]
     Name,
-    [Description("u.Goal")]
+    [Description("u.Email")]
     Email,
-    [Description("u.CurrentAmount")]
+    [Description("u.Balance")]
     Balance
 }
 

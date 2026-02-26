@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using PopaDin.Bkd.Api.Dtos.User;
-using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
@@ -24,22 +22,11 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserResponse>> CreateUser(
-        [FromBody] CreateUserRequest createUserRequest
-    )
+    public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest createUserRequest)
     {
-        try
-        {
-            var user = createUserRequest.Adapt<User>();
-            User userCreated = await userService.CreateUserAsync(user);
-            var userResponse = userCreated.Adapt<UserResponse>();
-
-            return Ok(userResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        var user = createUserRequest.Adapt<User>();
+        User userCreated = await userService.CreateUserAsync(user);
+        return Ok(userCreated.Adapt<UserResponse>());
     }
 
     /// <summary>
@@ -49,23 +36,15 @@ public class UserController(IUserService userService) : ControllerBase
     /// <returns>Uma lista paginada de users</returns>
     /// <response code="200">Sucesso, e retorna uma lista paginada de users</response>
     [HttpGet]
-    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<UserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<UserResponse>>> GetUsers([FromQuery] ListUsersRequest listUsersRequest)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var listUsers = listUsersRequest.Adapt<ListUsers>();
-            PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
-            var userResponse = users.Adapt<PaginatedResult<UserResponse>>();
-            return Ok(userResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var listUsers = listUsersRequest.Adapt<ListUsers>();
+        PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
+        return Ok(users.Adapt<PaginatedResult<UserResponse>>());
     }
 
     /// <summary>
@@ -75,41 +54,25 @@ public class UserController(IUserService userService) : ControllerBase
     /// <returns>O User consultado</returns>
     /// <response code="200">Sucesso, e retorna um User</response>
     [HttpGet("{userId:decimal}")]
-    [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> FindUserById([FromRoute] decimal userId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            User user = await userService.FindUserByIdAsync(userId);
-            var userResponse = user.Adapt<UserResponse>();
-            return Ok(userResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        User user = await userService.FindUserByIdAsync(userId);
+        return Ok(user.Adapt<UserResponse>());
     }
 
     [HttpPut("{userId:decimal}")]
-    [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest updateUserRequest,
         [FromRoute] decimal userId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = updateUserRequest.Adapt<User>();
-            User updatedUser = await userService.UpdateUserAsync(user, userId);
-            var userResponse = updatedUser.Adapt<UserResponse>();
-            return Ok(userResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = updateUserRequest.Adapt<User>();
+        User updatedUser = await userService.UpdateUserAsync(user, userId);
+        return Ok(updatedUser.Adapt<UserResponse>());
     }
 
     /// <summary>
@@ -123,15 +86,8 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteUser([FromRoute] decimal userId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await userService.DeleteUserAsync(userId);
-            return NoContent();
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await userService.DeleteUserAsync(userId);
+        return NoContent();
     }
 }

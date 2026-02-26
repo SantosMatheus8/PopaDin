@@ -13,7 +13,7 @@ public class RecordService(IRecordRepository repository, ITagRepository tagRepos
         logger.LogInformation("Criando Record");
 
         if (record.Value < 0)
-            throw new PopaBaseException("O valor deve ser maior que zero.", 422);
+            throw new UnprocessableEntityException("O valor deve ser maior que zero.");
 
         if (tagIds.Count > 0)
         {
@@ -22,7 +22,7 @@ public class RecordService(IRecordRepository repository, ITagRepository tagRepos
             var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
 
             if (missingIds.Count > 0)
-                throw new PopaBaseException($"As seguintes tags não existem: {string.Join(", ", missingIds)}", 404);
+                throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
         }
 
         var recordCreated = await repository.CreateRecordAsync(record, tagIds);
@@ -53,7 +53,7 @@ public class RecordService(IRecordRepository repository, ITagRepository tagRepos
             var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
 
             if (missingIds.Count > 0)
-                throw new PopaBaseException($"As seguintes tags não existem: {string.Join(", ", missingIds)}", 404);
+                throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
         }
 
         record.Operation = updateRecordRequest.Operation;
@@ -77,7 +77,7 @@ public class RecordService(IRecordRepository repository, ITagRepository tagRepos
         if (record == null)
         {
             logger.LogInformation("Record nao encontrado");
-            throw new PopaBaseException("Record não encontrado", 404);
+            throw new NotFoundException("Record não encontrado");
         }
 
         return record;

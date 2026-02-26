@@ -15,7 +15,7 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
 
         if (user.Balance < 0)
         {
-            throw new PopaBaseException("O valor deve ser maior que zero.", 422);
+            throw new UnprocessableEntityException("O valor deve ser maior que zero.");
         }
         user.Password = Hash.HashPassword(user.Password);
         
@@ -60,7 +60,7 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         if (user == null)
         {
             logger.LogInformation("User nao encontrado");
-            throw new PopaBaseException("User não encontrado", 404);
+            throw new NotFoundException("User não encontrado");
         }
 
         return user;

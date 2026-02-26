@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Record;
-using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
@@ -23,22 +22,11 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecordResponse>> CreateRecord(
-        [FromBody] CreateRecordRequest createRecordRequest
-    )
+    public async Task<ActionResult<RecordResponse>> CreateRecord([FromBody] CreateRecordRequest createRecordRequest)
     {
-        try
-        {
-            var record = createRecordRequest.Adapt<Record>();
-            Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds);
-            var recordResponse = recordCreated.Adapt<RecordResponse>();
-
-            return Ok(recordResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        var record = createRecordRequest.Adapt<Record>();
+        Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds);
+        return Ok(recordCreated.Adapt<RecordResponse>());
     }
 
     /// <summary>
@@ -53,18 +41,10 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<RecordResponse>>> GetRecords([FromQuery] ListRecordsRequest listRecordsRequest)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var listRecords = listRecordsRequest.Adapt<ListRecords>();
-            PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords);
-            var recordsResponse = records.Adapt<PaginatedResult<RecordResponse>>();
-            return Ok(recordsResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var listRecords = listRecordsRequest.Adapt<ListRecords>();
+        PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords);
+        return Ok(records.Adapt<PaginatedResult<RecordResponse>>());
     }
 
     /// <summary>
@@ -78,17 +58,9 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] decimal recordId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Record record = await recordService.FindRecordByIdAsync(recordId);
-            var recordResponse = record.Adapt<RecordResponse>();
-            return Ok(recordResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Record record = await recordService.FindRecordByIdAsync(recordId);
+        return Ok(record.Adapt<RecordResponse>());
     }
 
     [HttpPut("{recordId:decimal}")]
@@ -97,17 +69,10 @@ public class RecordController(IRecordService recordService) : ControllerBase
     public async Task<ActionResult<RecordResponse>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
         [FromRoute] decimal recordId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var record = updateRecordRequest.Adapt<Record>();
-            Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId);
-            return Ok(updatedRecord.Adapt<RecordResponse>());
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var record = updateRecordRequest.Adapt<Record>();
+        Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId);
+        return Ok(updatedRecord.Adapt<RecordResponse>());
     }
 
     /// <summary>
@@ -119,17 +84,10 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [HttpDelete("{recordId:decimal}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Record>> DeleteRecord([FromRoute] decimal recordId)
+    public async Task<ActionResult> DeleteRecord([FromRoute] decimal recordId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await recordService.DeleteRecordAsync(recordId);
-            return NoContent();
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await recordService.DeleteRecordAsync(recordId);
+        return NoContent();
     }
 }

@@ -53,7 +53,7 @@ public class TagService(ITagRepository repository, ILogger<TagService> logger) :
         if (tag == null)
         {
             logger.LogInformation("Tag nao encontrada");
-            throw new PopaBaseException("Tag não encontrada", 404);
+            throw new NotFoundException("Tag não encontrada");
         }
 
         return tag;
