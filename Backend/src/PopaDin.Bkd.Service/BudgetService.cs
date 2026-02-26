@@ -12,10 +12,6 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     {
         logger.LogInformation("Criando Budget");
 
-        if (budget.CurrentAmount < 0)
-        {
-            throw new UnprocessableEntityException("O valor atual deve ser maior que zero.");
-        }
         if (budget.Goal < 1)
         {
             throw new UnprocessableEntityException("A meta deve ser maior que um.");
@@ -40,10 +36,6 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     {
         logger.LogInformation("Editando um Budget");
 
-        if (updateBudgetRequest.CurrentAmount < 0)
-        {
-            throw new UnprocessableEntityException("O valor atual deve ser maior que zero.");
-        }
         if (updateBudgetRequest.Goal < 1)
         {
             throw new UnprocessableEntityException("A meta deve ser maior que um.");
@@ -53,7 +45,6 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
 
         budget.Name = updateBudgetRequest.Name;
         budget.Goal = updateBudgetRequest.Goal;
-        budget.CurrentAmount = updateBudgetRequest.CurrentAmount;
         await repository.UpdateBudgetAsync(budget);
 
         return await repository.FindBudgetByIdAsync(budgetId);

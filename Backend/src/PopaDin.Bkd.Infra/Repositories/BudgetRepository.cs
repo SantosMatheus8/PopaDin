@@ -22,7 +22,6 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             {
                 Name = budget.Name,
                 Goal = budget.Goal,
-                CurrentAmount = budget.CurrentAmount,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
@@ -51,7 +50,6 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
                 Id = listBudgets.Id,
                 Name = listBudgets.Name,
                 Goal = listBudgets.Goal,
-                CurrentAmount = listBudgets.CurrentAmount,
                 Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
                 listBudgets.ItemsPerPage
             }
@@ -62,7 +60,6 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             Id = listBudgets.Id,
             Name = listBudgets.Name,
             Goal = listBudgets.Goal,
-            CurrentAmount = listBudgets.CurrentAmount,
             Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
             listBudgets.ItemsPerPage
         });
@@ -102,8 +99,6 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             query += " AND LOWER(b.Name) COLLATE Latin1_General_CI_AI LIKE '%' + @Name + '%' ";
         if (listBudgets.Goal.HasValue)
             query += " AND b.Goal = @Goal ";
-        if (listBudgets.CurrentAmount.HasValue)
-            query += " AND b.CurrentAmount = @CurrentAmount ";
         return query;
     }
 
@@ -132,7 +127,6 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
                     BudgetId = budget.Id,
                     Name = budget.Name,
                     Goal = budget.Goal,
-                    CurrentAmount = budget.CurrentAmount,
                     UpdatedAt = DateTime.Now
                 }, transaction);
             await transaction.CommitAsync();
