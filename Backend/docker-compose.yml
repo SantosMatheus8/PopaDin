@@ -51,12 +51,27 @@ services:
         fi
         "
 
+  mongodb-popa:
+    image: mongo:7
+    container_name: mongodb-popa
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+
   popadin-api:
     build:
       context: .
       dockerfile: src/PopaDin.Bkd.Api/Dockerfile
     depends_on:
       sqlserver-popa:
+        condition: service_healthy
+      mongodb-popa:
         condition: service_healthy
     ports:
       - "5285:5285"
@@ -67,3 +82,4 @@ services:
 
 volumes:
   sqlserver_data:
+  mongodb_data:
