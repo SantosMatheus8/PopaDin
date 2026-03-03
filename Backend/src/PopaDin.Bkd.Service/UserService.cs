@@ -22,21 +22,24 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         return await repository.CreateUserAsync(user);
     }
 
-    public async Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers)
+    public async Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers, decimal userId)
     {
         logger.LogInformation("Listando User");
+        listUsers.Id = (int)userId;
         return await repository.GetUsersAsync(listUsers);
     }
 
-    public async Task<User> FindUserByIdAsync(decimal userId)
+    public async Task<User> FindUserByIdAsync(decimal userId, decimal authenticatedUserId)
     {
         logger.LogInformation("Buscando um User");
+        ValidateUserOwnership(userId, authenticatedUserId);
         return await FindUserOrThrowExceptionAsync(userId);
     }
 
-    public async Task<User> UpdateUserAsync(User updateUserRequest, decimal userId)
+    public async Task<User> UpdateUserAsync(User updateUserRequest, decimal userId, decimal authenticatedUserId)
     {
         logger.LogInformation("Editando um User");
+        ValidateUserOwnership(userId, authenticatedUserId);
         User user = await FindUserOrThrowExceptionAsync(userId);
 
         user.Name = updateUserRequest.Name;
@@ -52,10 +55,20 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         return await repository.FindUserByIdAsync(userId);
     }
 
-    public async Task DeleteUserAsync(decimal userId)
+    public async Task DeleteUserAsync(decimal userId, decimal authenticatedUserId)
     {
+        ValidateUserOwnership(userId, authenticatedUserId);
         await FindUserOrThrowExceptionAsync(userId);
         await repository.DeleteUserAsync(userId);
+    }
+
+    private void ValidateUserOwnership(decimal userId, decimal authenticatedUserId)
+    {
+        if (userId != authenticatedUserId)
+        {
+            logger.LogInformation("User tentou acessar dados de outro usuario");
+            throw new NotFoundException("User não encontrado");
+        }
     }
 
     private async Task<User> FindUserOrThrowExceptionAsync(decimal userId)

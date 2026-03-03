@@ -5,6 +5,8 @@ using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using PopaDin.Bkd.Domain.Models.User;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
@@ -41,8 +43,9 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(PaginatedResult<UserResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedResult<UserResponse>>> GetUsers([FromQuery] ListUsersRequest listUsersRequest)
     {
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var listUsers = listUsersRequest.Adapt<ListUsers>();
-        PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
+        PaginatedResult<User> users = await userService.GetUsersAsync(listUsers, userId);
         var usersResponse = users.Adapt<PaginatedResult<UserResponse>>();
         return Ok(usersResponse);
     }
@@ -58,7 +61,8 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> FindUserById([FromRoute] decimal userId)
     {
-        User user = await userService.FindUserByIdAsync(userId);
+        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        User user = await userService.FindUserByIdAsync(userId, authenticatedUserId);
         var userResponse = user.Adapt<UserResponse>();
         return Ok(userResponse);
     }
@@ -69,8 +73,9 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest updateUserRequest,
         [FromRoute] decimal userId)
     {
+        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = updateUserRequest.Adapt<User>();
-        User updatedUser = await userService.UpdateUserAsync(user, userId);
+        User updatedUser = await userService.UpdateUserAsync(user, userId, authenticatedUserId);
         var userResponse = updatedUser.Adapt<UserResponse>();
         return Ok(userResponse);
     }
@@ -86,7 +91,8 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteUser([FromRoute] decimal userId)
     {
-        await userService.DeleteUserAsync(userId);
+        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await userService.DeleteUserAsync(userId, authenticatedUserId);
         return NoContent();
     }
 }
