@@ -180,5 +180,25 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
 
         return response!;
     }
+
+    public async Task UpdateBalanceAsync(decimal userId, double amount)
+    {
+        await connection.OpenAsync();
+        var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            logger.LogInformation("Query executada: {Sql}.", UserQueries.UpdateBalance);
+            await connection.ExecuteAsync(UserQueries.UpdateBalance,
+                new { UserId = userId, Amount = amount, UpdatedAt = DateTime.Now },
+                transaction);
+            await transaction.CommitAsync();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError("Erro ao atualizar Balance do User : {Erro}", e);
+            throw;
+        }
+    }
 }
 

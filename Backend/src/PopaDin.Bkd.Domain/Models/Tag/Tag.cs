@@ -8,8 +8,7 @@ public class Tag
     public string Name { get; set; } = "";
     public OperationEnum? TagType { get; set; }
     public string? Description { get; set; }
-    // public int? UserId { get; set; }
-    // public UserModel? User { get; set; }
+    public User.User User { get; set; } = new();
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

@@ -11,4 +11,5 @@ public interface IUserRepository
     Task UpdateUserAsync(User user);
     Task DeleteUserAsync(decimal userId);
     Task<User> FindUserByEmailAsync(string userEmail);
+    Task UpdateBalanceAsync(decimal userId, double amount);
 }

@@ -6,6 +6,7 @@ using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
 using PopaDin.Bkd.Domain.Models.Budget;
+using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -22,6 +23,7 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             {
                 Name = budget.Name,
                 Goal = budget.Goal,
+                UserId = budget.User.Id,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
@@ -44,26 +46,28 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
 
         logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listBudgets);
 
-        var result = await connection.QueryAsync<Budget>(
-            query, new
-            {
-                Id = listBudgets.Id,
-                Name = listBudgets.Name,
-                Goal = listBudgets.Goal,
-                Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
-                listBudgets.ItemsPerPage
-            }
-        );
-
-        var totalLines = await connection.QuerySingleAsync<int>(countQuery, new
+        var parameters = new
         {
             Id = listBudgets.Id,
             Name = listBudgets.Name,
             Goal = listBudgets.Goal,
+            UserId = listBudgets.UserId,
             Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
             listBudgets.ItemsPerPage
-        });
+        };
 
+        var result = await connection.QueryAsync<Budget, User, Budget>(
+            query,
+            (budget, user) =>
+            {
+                budget.User = user;
+                return budget;
+            },
+            parameters,
+            splitOn: "UserId"
+        );
+
+        var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
 
         logger.LogInformation("Resultado: {@Resultado}. ", result);
 
@@ -82,10 +86,10 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
         var query = AddFilters(listBudgets, BudgetQueries.ListBudgets);
         query +=
             @$"
-                ORDER BY 
-                {listBudgets.OrderBy.GetEnumDescription()} 
-                {listBudgets.OrderDirection.GetEnumDescription()} 
-                OFFSET @Offset 
+                ORDER BY
+                {listBudgets.OrderBy.GetEnumDescription()}
+                {listBudgets.OrderDirection.GetEnumDescription()}
+                OFFSET @Offset
                 ROWS FETCH NEXT @ItemsPerPage ROWS ONLY
                 ";
         return query;
@@ -93,6 +97,7 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
 
     private static string AddFilters(ListBudgets listBudgets, string query)
     {
+        query += " AND b.UserId = @UserId ";
         if (listBudgets.Id.HasValue)
             query += " AND b.Id = @Id ";
         if (!string.IsNullOrEmpty(listBudgets.Name))
@@ -102,16 +107,26 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
         return query;
     }
 
-    public async Task<Budget> FindBudgetByIdAsync(decimal budgetId)
+    public async Task<Budget> FindBudgetByIdAsync(decimal budgetId, decimal userId)
     {
         logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FindBudgetById);
 
-        var response = await connection.QueryFirstOrDefaultAsync<Budget>(BudgetQueries.FindBudgetById,
-            new { BudgetId = budgetId });
+        var result = await connection.QueryAsync<Budget, User, Budget>(
+            BudgetQueries.FindBudgetById,
+            (budget, user) =>
+            {
+                budget.User = user;
+                return budget;
+            },
+            new { BudgetId = budgetId, UserId = userId },
+            splitOn: "UserId"
+        );
 
-        logger.LogInformation("Resultado: {@Resultado}. ", response);
+        var budget = result.FirstOrDefault();
 
-        return response!;
+        logger.LogInformation("Resultado: {@Resultado}. ", budget);
+
+        return budget!;
     }
 
     public async Task UpdateBudgetAsync(Budget budget)
@@ -160,5 +175,28 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             throw;
         }
     }
-}
 
+    public async Task FinishBudgetAsync(decimal budgetId)
+    {
+        await connection.OpenAsync();
+        var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FinishBudget);
+            var response = await connection.ExecuteAsync(BudgetQueries.FinishBudget,
+                new
+                {
+                    BudgetId = budgetId,
+                    FinishAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                }, transaction);
+            await transaction.CommitAsync();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError("Erro ao finalizar Budget : {Erro}", e);
+            throw;
+        }
+    }
+}

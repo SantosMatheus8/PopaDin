@@ -8,6 +8,7 @@ using PopaDin.Bkd.Domain.Utils;
 using PopaDin.Bkd.Domain.Models.Record;
 using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Models.Tag;
+using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -25,6 +26,7 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                 Operation = record.Operation,
                 Value = record.Value,
                 Frequency = record.Frequency,
+                UserId = record.User.Id,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
@@ -62,19 +64,21 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
             Operation = listRecords.Operation,
             Value = listRecords.Value,
             Frequency = listRecords.Frequency,
+            UserId = listRecords.UserId,
             Offset = (listRecords.Page - 1) * listRecords.ItemsPerPage,
             listRecords.ItemsPerPage
         };
 
         var recordDictionary = new Dictionary<int, Record>();
 
-        await connection.QueryAsync<Record, Tag, Record>(
+        await connection.QueryAsync<Record, User, Tag, Record>(
             query,
-            (record, tag) =>
+            (record, user, tag) =>
             {
                 if (!recordDictionary.TryGetValue(record.Id!.Value, out var recordEntry))
                 {
                     recordEntry = record;
+                    recordEntry.User = user;
                     recordDictionary.Add(recordEntry.Id!.Value, recordEntry);
                 }
 
@@ -84,7 +88,7 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                 return recordEntry;
             },
             parameters,
-            splitOn: "TagId"
+            splitOn: "UserId,TagId"
         );
 
         var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
@@ -106,10 +110,10 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
         var query = AddFilters(listRecords, RecordQueries.ListRecords);
         query +=
             @$"
-                ORDER BY 
-                {listRecords.OrderBy.GetEnumDescription()} 
-                {listRecords.OrderDirection.GetEnumDescription()} 
-                OFFSET @Offset 
+                ORDER BY
+                {listRecords.OrderBy.GetEnumDescription()}
+                {listRecords.OrderDirection.GetEnumDescription()}
+                OFFSET @Offset
                 ROWS FETCH NEXT @ItemsPerPage ROWS ONLY
                 ";
         return query;
@@ -117,6 +121,7 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
     private static string AddFilters(ListRecords listRecords, string query)
     {
+        query += " AND r.UserId = @UserId ";
         if (listRecords.Id.HasValue)
             query += " AND r.Id = @Id ";
         if (listRecords.Operation.HasValue)
@@ -126,19 +131,20 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
         return query;
     }
 
-    public async Task<Record> FindRecordByIdAsync(decimal recordId)
+    public async Task<Record> FindRecordByIdAsync(decimal recordId, decimal userId)
     {
         logger.LogInformation("Query executada: {Sql}.", RecordQueries.FindRecordById);
 
         var recordDictionary = new Dictionary<int, Record>();
 
-        var response = await connection.QueryAsync<Record, Tag, Record>(
+        await connection.QueryAsync<Record, User, Tag, Record>(
             RecordQueries.FindRecordById,
-            (record, tag) =>
+            (record, user, tag) =>
             {
                 if (!recordDictionary.TryGetValue(record.Id!.Value, out var recordEntry))
                 {
                     recordEntry = record;
+                    recordEntry.User = user;
                     recordDictionary.Add(recordEntry.Id!.Value, recordEntry);
                 }
 
@@ -147,8 +153,8 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
                 return recordEntry;
             },
-            new { RecordId = recordId },
-            splitOn: "TagId"
+            new { RecordId = recordId, UserId = userId },
+            splitOn: "UserId,TagId"
         );
 
         var result = recordDictionary.Values.FirstOrDefault();
@@ -219,4 +225,3 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
         }
     }
 }
-

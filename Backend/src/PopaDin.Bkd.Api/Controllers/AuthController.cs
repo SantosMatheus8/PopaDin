@@ -22,7 +22,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(new LoginResponse { Access_token = token });
     }
 
-    // [Authorize]
+    [Authorize]
     [HttpGet]
     [Route("profile")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]

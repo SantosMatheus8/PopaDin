@@ -4,12 +4,15 @@ using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using PopaDin.Bkd.Domain.Models.Record;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
 [Route("v1/[controller]")]
 [ApiController]
-// [Authorize]
+[Authorize]
 public class RecordController(IRecordService recordService) : ControllerBase
 {
     /// <summary>
@@ -24,8 +27,9 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> CreateRecord([FromBody] CreateRecordRequest createRecordRequest)
     {
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = createRecordRequest.Adapt<Record>();
-        Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds);
+        Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds, userId);
         var recordResponse = recordCreated.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }
@@ -42,9 +46,9 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<RecordResponse>>> GetRecords([FromQuery] ListRecordsRequest listRecordsRequest)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var listRecords = listRecordsRequest.Adapt<ListRecords>();
-        PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords);
+        PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords, userId);
         var recordsResponse = records.Adapt<PaginatedResult<RecordResponse>>();
         return Ok(recordsResponse);
     }
@@ -60,8 +64,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] decimal recordId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Record record = await recordService.FindRecordByIdAsync(recordId);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        Record record = await recordService.FindRecordByIdAsync(recordId, userId);
         var recordResponse = record.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }
@@ -72,9 +76,9 @@ public class RecordController(IRecordService recordService) : ControllerBase
     public async Task<ActionResult<RecordResponse>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
         [FromRoute] decimal recordId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = updateRecordRequest.Adapt<Record>();
-        Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId);
+        Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId, userId);
         var recordResponse = updatedRecord.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }
@@ -90,8 +94,8 @@ public class RecordController(IRecordService recordService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteRecord([FromRoute] decimal recordId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        await recordService.DeleteRecordAsync(recordId);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await recordService.DeleteRecordAsync(recordId, userId);
         return NoContent();
     }
 }

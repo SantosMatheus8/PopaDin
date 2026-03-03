@@ -1,15 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Budget;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using PopaDin.Bkd.Domain.Models.Budget;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
 [Route("v1/[controller]")]
 [ApiController]
-// [Authorize]
+[Authorize]
 public class BudgetController(IBudgetService budgetService) : ControllerBase
 {
     /// <summary>
@@ -23,9 +26,10 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BudgetResponse>> CreateBudget([FromBody] CreateBudgetRequest createBudgetRequest)
-    {
+    {       
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var budget = createBudgetRequest.Adapt<Budget>();
-        Budget budgetCreated = await budgetService.CreateBudgetAsync(budget);
+        Budget budgetCreated = await budgetService.CreateBudgetAsync(budget, userId);
         var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
         return Ok(budgetResponse);
     }
@@ -42,9 +46,9 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<BudgetResponse>>> GetBudgets([FromQuery] ListBudgetsRequest listBudgetsRequest)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var listBudgets = listBudgetsRequest.Adapt<ListBudgets>();
-        PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets);
+        PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets, userId);
         var budgetsResponse = budgets.Adapt<PaginatedResult<BudgetResponse>>();
         return Ok(budgetsResponse);
     }
@@ -60,8 +64,8 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BudgetResponse>> FindBudgetById([FromRoute] decimal budgetId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Budget budget = await budgetService.FindBudgetByIdAsync(budgetId);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        Budget budget = await budgetService.FindBudgetByIdAsync(budgetId, userId);
         var budgetResponse = budget.Adapt<BudgetResponse>();
         return Ok(budgetResponse);
     }
@@ -72,9 +76,9 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     public async Task<ActionResult<BudgetResponse>> UpdateBudget([FromBody] UpdateBudgetRequest updateBudgetRequest,
         [FromRoute] decimal budgetId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var budget = updateBudgetRequest.Adapt<Budget>();
-        Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId);
+        Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId, userId);
         var budgetResponse = updatedBudget.Adapt<BudgetResponse>();
         return Ok(budgetResponse);
     }
@@ -90,8 +94,24 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteBudget([FromRoute] decimal budgetId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        await budgetService.DeleteBudgetAsync(budgetId);
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await budgetService.DeleteBudgetAsync(budgetId, userId);
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Atraves dessa rota voce sera capaz de finalizar um budget
+    /// </summary>
+    /// <param name="budgetId">O codigo do budget</param>
+    /// <returns>Confirmação de finalização</returns>
+    /// <response code="204">Sucesso, e retorna confirmação de deleção</response>
+    [HttpPatch("{budgetId:decimal}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> FinishBudget([FromRoute] decimal budgetId)
+    {
+        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await budgetService.FinishBudgetAsync(budgetId, userId);
         return NoContent();
     }
 }

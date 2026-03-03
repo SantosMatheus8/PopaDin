@@ -3,9 +3,9 @@ namespace PopaDin.Bkd.Infra.Queries;
 public static class RecordQueries
 {
     public const string CreateRecord = @"
-  INSERT INTO Record 
+  INSERT INTO Record
           (Operation, Value, Frequency, UserId, CreatedAt, UpdatedAt)
-          OUTPUT 
+          OUTPUT
             INSERTED.Id AS Id,
             INSERTED.Operation AS Operation,
             INSERTED.Value AS Value,
@@ -13,8 +13,8 @@ public static class RecordQueries
             INSERTED.UserId AS UserId,
             INSERTED.CreatedAt AS CreatedAt,
             INSERTED.UpdatedAt AS UpdatedAt
-          VALUES 
-          (@Operation, @Value, @Frequency, 2, @CreatedAt, @UpdatedAt)
+          VALUES
+          (@Operation, @Value, @Frequency, @UserId, @CreatedAt, @UpdatedAt)
            ";
 
     public const string ListRecords = @"
@@ -25,14 +25,26 @@ public static class RecordQueries
             r.Frequency AS Frequency,
             r.CreatedAt AS CreatedAt,
             r.UpdatedAt AS UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name,
+            u.Email,
+            u.Balance,
+            u.CreatedAt,
+            u.UpdatedAt,
             t.Id AS TagId,
             t.Id AS Id,
             t.Name,
-            t.TagType
+            t.TagType,
+            t.Description,
+            t.CreatedAt,
+            t.UpdatedAt
         FROM Record r WITH(NOLOCK)
+        INNER JOIN [User] u WITH(NOLOCK) ON r.UserId = u.Id
         LEFT JOIN RecordTag rt WITH(NOLOCK) ON rt.RecordId = r.Id
         LEFT JOIN Tag t WITH(NOLOCK) ON t.Id = rt.TagId
         WHERE 1 = 1";
+
     public const string Count = @"
       SELECT COUNT(*)
       FROM Record r WITH(NOLOCK)
@@ -40,20 +52,31 @@ public static class RecordQueries
 
     public const string FindRecordById = @"
         SELECT
-            b.Id,
-            b.Operation AS Operation,
-            b.Value AS Value,
-            b.Frequency AS Frequency,
-            b.CreatedAt AS CreatedAt,
-            b.UpdatedAt AS UpdatedAt,
+            r.Id,
+            r.Operation AS Operation,
+            r.Value AS Value,
+            r.Frequency AS Frequency,
+            r.CreatedAt AS CreatedAt,
+            r.UpdatedAt AS UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name,
+            u.Email,
+            u.Balance,
+            u.CreatedAt,
+            u.UpdatedAt,
             t.Id AS TagId,
             t.Id AS Id,
             t.Name,
-            t.TagType
-        FROM Record b WITH(NOLOCK)
-        LEFT JOIN RecordTag rt WITH(NOLOCK) ON rt.RecordId = b.Id
+            t.TagType,
+            t.Description,
+            t.CreatedAt,
+            t.UpdatedAt
+        FROM Record r WITH(NOLOCK)
+        INNER JOIN [User] u WITH(NOLOCK) ON r.UserId = u.Id
+        LEFT JOIN RecordTag rt WITH(NOLOCK) ON rt.RecordId = r.Id
         LEFT JOIN Tag t WITH(NOLOCK) ON t.Id = rt.TagId
-        WHERE b.Id = @RecordId";
+        WHERE r.Id = @RecordId AND r.UserId = @UserId";
 
     public const string UpdateRecord = @"
         UPDATE Record
