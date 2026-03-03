@@ -41,7 +41,12 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
 
         user.Name = updateUserRequest.Name;
         user.Balance = updateUserRequest.Balance;
-        user.Password = updateUserRequest.Password;
+
+        if (!string.IsNullOrEmpty(updateUserRequest.Password))
+        {
+            user.Password = Hash.HashPassword(updateUserRequest.Password);
+        }
+
         await repository.UpdateUserAsync(user);
 
         return await repository.FindUserByIdAsync(userId);

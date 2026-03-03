@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Helpers;
@@ -9,7 +11,7 @@ using System.Text;
 
 namespace PopaDin.Application.Services;
 
-public class AuthService(IUserRepository repository, ILogger<AuthService> logger) : IAuthService
+public class AuthService(IUserRepository repository, IConfiguration configuration, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<string> GenerateToken(string email, string password)
     {
@@ -17,20 +19,12 @@ public class AuthService(IUserRepository repository, ILogger<AuthService> logger
 
         if (user == null || !Hash.CheckPassword(password, user.Password))
         {
-            logger.LogInformation("User nao encontrado");
-            throw new NotFoundException("User não encontrado");
+            logger.LogWarning("Tentativa de login com credenciais inválidas para o email: {Email}", email);
+            throw new UnauthorizedException("Credenciais inválidas");
         }
 
-        var issuer = string.Empty;
-        var audience = string.Empty;
-        var expiry = DateTime.Now.AddDays(7);
-        var configuration = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json")
-        .Build();
-
         var secret = configuration["AppSettings:Secret"];
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -40,55 +34,23 @@ public class AuthService(IUserRepository repository, ILogger<AuthService> logger
             new Claim("name", user.Name)
         };
 
-        var token = new JwtSecurityToken
-
-        (
-            issuer: issuer,
-            audience: audience,
+        var token = new JwtSecurityToken(
+            expires: DateTime.UtcNow.AddDays(7),
             claims: claims,
-            expires: expiry,
             signingCredentials: credentials
         );
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var stringToken = tokenHandler.WriteToken(token);
-
-        return stringToken;
-        // return new LoginResponseDTO { Access_token = stringToken };
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<User> GetProfile(string token)
+    public async Task<User> GetProfile(int userId)
     {
+        var user = await repository.FindUserByIdAsync(userId);
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        var secret = configuration["AppSettings:Secret"];
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-
-        var tokenValidationParameters = new TokenValidationParameters
+        if (user == null)
         {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = securityKey,
-            ValidateIssuer = false,
-            ValidateAudience = false
-        };
-
-        ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-        var tokenString = tokenHandler.WriteToken(validatedToken);
-        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
-
-        User user = await repository.FindUserByIdAsync(decimal.Parse(jwtToken.Claims.First(claim => claim.Type == "sub").Value));
-        // var userClaims = new UserResponse
-        // {
-        //     Id = int.Parse(jwtToken.Claims.First(claim => claim.Type == "sub").Value),
-        //     Email = jwtToken.Claims.First(claim => claim.Type == "email").Value,
-        //     Name = jwtToken.Claims.First(claim => claim.Type == "name").Value,
-        // };
-        // userClaims.Balance = await _userRepository.GetBalance(userClaims.Id);
+            throw new NotFoundException("User não encontrado");
+        }
 
         return user;
     }

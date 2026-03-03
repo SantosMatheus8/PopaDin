@@ -19,7 +19,11 @@ public static class Program
 {
     public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        app.UseDeveloperExceptionPage();
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
@@ -79,7 +83,7 @@ public static class Program
         services.AddRouting(options => options.LowercaseUrls = true);
         services.AddHttpClient();
         services.AddEndpointsApiExplorer();
-        services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
+        services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = false; });
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
@@ -125,7 +129,7 @@ public static class Program
                         ValidIssuer = string.Empty,
                         ValidAudience = string.Empty,
                         IssuerSigningKey = new SymmetricSecurityKey
-                            (Encoding.UTF8.GetBytes(config["AppSettings:Secret"])),
+                            (Encoding.UTF8.GetBytes(config["AppSettings:Secret"]!)),
                         ValidateIssuer = false,
                         ValidateAudience = false,
                         ValidateLifetime = true,

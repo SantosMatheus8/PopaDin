@@ -1,9 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Auth;
 using PopaDin.Bkd.Api.Dtos.User;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.API.Controllers;
 
@@ -15,11 +15,11 @@ public class AuthController(IAuthService authService) : ControllerBase
     [Route("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest loginRequest)
     {
         var token = await authService.GenerateToken(loginRequest.Email, loginRequest.Password);
-        return Ok(new LoginResponse { Access_token = token });
+        return Ok(new LoginResponse { AccessToken = token });
     }
 
     [Authorize]
@@ -29,8 +29,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> GetProfile()
     {
-        var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-        User user = await authService.GetProfile(token);
+        var userId = int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var user = await authService.GetProfile(userId);
         var userResponse = user.Adapt<UserResponse>();
         return Ok(userResponse);
     }

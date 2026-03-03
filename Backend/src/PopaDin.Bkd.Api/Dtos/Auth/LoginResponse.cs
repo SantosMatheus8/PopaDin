@@ -1,6 +1,9 @@
+using System.Text.Json.Serialization;
+
 namespace PopaDin.Bkd.Api.Dtos.Auth;
 
 public class LoginResponse
 {
-    public string Access_token { get; set; } = "";
+    [JsonPropertyName("access_token")]
+    public string AccessToken { get; set; } = "";
 }
