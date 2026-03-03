@@ -3,19 +3,18 @@ namespace PopaDin.Bkd.Infra.Queries;
 public static class BudgetQueries
 {
     public const string CreateBudget = @"
-  INSERT INTO Budget 
-          (Name, Goal, CurrentAmount, UserId, CreatedAt, UpdatedAt)
-          OUTPUT 
+  INSERT INTO Budget
+          (Name, Goal, UserId, CreatedAt, UpdatedAt)
+          OUTPUT
             INSERTED.Id AS Id,
             INSERTED.Name AS Name,
             INSERTED.Goal AS Goal,
-            INSERTED.CurrentAmount AS CurrentAmount,
             INSERTED.FinishAt AS FinishAt,
             INSERTED.UserId AS UserId,
             INSERTED.CreatedAt AS CreatedAt,
             INSERTED.UpdatedAt AS UpdatedAt
-          VALUES 
-          (@Name, @Goal, @CurrentAmount, 2, @CreatedAt, @UpdatedAt)
+          VALUES
+          (@Name, @Goal, 2, @CreatedAt, @UpdatedAt)
            ";
 
     public const string ListBudgets = @"
@@ -23,7 +22,6 @@ public static class BudgetQueries
             b.Id,
             b.Name As Name,
             b.Goal As Goal,
-            b.CurrentAmount As CurrentAmount,
             b.FinishAt As FinishAt,
             b.CreatedAt As CreatedAt,
             b.UpdatedAt As UpdatedAt
@@ -40,7 +38,6 @@ public static class BudgetQueries
             b.Id,
             b.Name As Name,
             b.Goal As Goal,
-            b.CurrentAmount As CurrentAmount,
             b.FinishAt As FinishAt,
             b.CreatedAt As CreatedAt,
             b.UpdatedAt As UpdatedAt
@@ -51,7 +48,6 @@ public static class BudgetQueries
         UPDATE Budget
         SET Name = @Name,
             Goal = @Goal,
-            CurrentAmount = @CurrentAmount,
             UpdatedAt = @UpdatedAt
         WHERE Id = @BudgetId";
 

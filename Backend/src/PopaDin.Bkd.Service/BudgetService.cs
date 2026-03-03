@@ -12,13 +12,9 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     {
         logger.LogInformation("Criando Budget");
 
-        if (budget.CurrentAmount < 0)
-        {
-            throw new PopaBaseException("O valor atual deve ser maior que zero.", 422);
-        }
         if (budget.Goal < 1)
         {
-            throw new PopaBaseException("A meta deve ser maior que um.", 422);
+            throw new UnprocessableEntityException("A meta deve ser maior que um.");
         }
 
         return await repository.CreateBudgetAsync(budget);
@@ -39,11 +35,16 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     public async Task<Budget> UpdateBudgetAsync(Budget updateBudgetRequest, decimal budgetId)
     {
         logger.LogInformation("Editando um Budget");
+
+        if (updateBudgetRequest.Goal < 1)
+        {
+            throw new UnprocessableEntityException("A meta deve ser maior que um.");
+        }
+
         Budget budget = await FindBudgetOrThrowExceptionAsync(budgetId);
 
         budget.Name = updateBudgetRequest.Name;
         budget.Goal = updateBudgetRequest.Goal;
-        budget.CurrentAmount = updateBudgetRequest.CurrentAmount;
         await repository.UpdateBudgetAsync(budget);
 
         return await repository.FindBudgetByIdAsync(budgetId);
@@ -62,7 +63,7 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
         if (budget == null)
         {
             logger.LogInformation("Budget nao encontrado");
-            throw new PopaBaseException("Budget não encontrado", 404);
+            throw new NotFoundException("Budget não encontrado");
         }
 
         return budget;

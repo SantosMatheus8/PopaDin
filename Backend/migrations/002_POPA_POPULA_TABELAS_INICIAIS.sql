@@ -46,11 +46,10 @@ DECLARE @i INT = 1;
 
 WHILE @i <= 40
 BEGIN
-    INSERT INTO Budget (Name, Goal, CurrentAmount, FinishAt, UserId, CreatedAt, UpdatedAt)
+    INSERT INTO Budget (Name, Goal, FinishAt, UserId, CreatedAt, UpdatedAt)
     VALUES (
         CONCAT('Budget ', @i),
         500 + (RAND() * 4500),
-        RAND() * 2000,
         DATEADD(DAY, @i, GETDATE()),
         ((@i - 1) % 40) + 1,
         DATEADD(DAY, -@i, GETDATE()),

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Budget;
-using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
@@ -23,22 +22,12 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BudgetResponse>> CreateBudget(
-        [FromBody] CreateBudgetRequest createBudgetRequest
-    )
+    public async Task<ActionResult<BudgetResponse>> CreateBudget([FromBody] CreateBudgetRequest createBudgetRequest)
     {
-        try
-        {
-            var budget = createBudgetRequest.Adapt<Budget>();
-            Budget budgetCreated = await budgetService.CreateBudgetAsync(budget);
-            var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
-
-            return Ok(budgetResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        var budget = createBudgetRequest.Adapt<Budget>();
+        Budget budgetCreated = await budgetService.CreateBudgetAsync(budget);
+        var budgetResponse = budgetCreated.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     /// <summary>
@@ -48,22 +37,16 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     /// <returns>Uma lista paginada de budgets</returns>
     /// <response code="200">Sucesso, e retorna uma lista paginada de budgets</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<BudgetResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedResult<Budget>>> GetBudgets([FromQuery] ListBudgetsRequest listBudgetsRequest)
+    public async Task<ActionResult<PaginatedResult<BudgetResponse>>> GetBudgets([FromQuery] ListBudgetsRequest listBudgetsRequest)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var listBudgets = listBudgetsRequest.Adapt<ListBudgets>();
-            PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets);
-            return Ok(budgets);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var listBudgets = listBudgetsRequest.Adapt<ListBudgets>();
+        PaginatedResult<Budget> budgets = await budgetService.GetBudgetsAsync(listBudgets);
+        var budgetsResponse = budgets.Adapt<PaginatedResult<BudgetResponse>>();
+        return Ok(budgetsResponse);
     }
 
     /// <summary>
@@ -73,39 +56,27 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     /// <returns>O Budget consultado</returns>
     /// <response code="200">Sucesso, e retorna um Budget</response>
     [HttpGet("{budgetId:decimal}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> FindBudgetById([FromRoute] decimal budgetId)
+    public async Task<ActionResult<BudgetResponse>> FindBudgetById([FromRoute] decimal budgetId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Budget budget = await budgetService.FindBudgetByIdAsync(budgetId);
-            return Ok(budget);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Budget budget = await budgetService.FindBudgetByIdAsync(budgetId);
+        var budgetResponse = budget.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     [HttpPut("{budgetId:decimal}")]
-    [ProducesResponseType(typeof(Budget), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BudgetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> UpdateBudget([FromBody] UpdateBudgetRequest updateBudgetRequest,
+    public async Task<ActionResult<BudgetResponse>> UpdateBudget([FromBody] UpdateBudgetRequest updateBudgetRequest,
         [FromRoute] decimal budgetId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var budget = updateBudgetRequest.Adapt<Budget>();
-            Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId);
-            return Ok(updatedBudget);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var budget = updateBudgetRequest.Adapt<Budget>();
+        Budget updatedBudget = await budgetService.UpdateBudgetAsync(budget, budgetId);
+        var budgetResponse = updatedBudget.Adapt<BudgetResponse>();
+        return Ok(budgetResponse);
     }
 
     /// <summary>
@@ -117,17 +88,10 @@ public class BudgetController(IBudgetService budgetService) : ControllerBase
     [HttpDelete("{budgetId:decimal}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Budget>> DeleteBudget([FromRoute] decimal budgetId)
+    public async Task<ActionResult> DeleteBudget([FromRoute] decimal budgetId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await budgetService.DeleteBudgetAsync(budgetId);
-            return NoContent();
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await budgetService.DeleteBudgetAsync(budgetId);
+        return NoContent();
     }
 }

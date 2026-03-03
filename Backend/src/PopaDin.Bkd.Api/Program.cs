@@ -10,6 +10,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using PopaDin.Bkd.Api.Middlewares;
 
 namespace PopaDin.Bkd.Api;
 
@@ -43,7 +44,7 @@ public static class Program
 
 
 
-        // app.UseMiddleware<CustomExceptionMiddleware>();
+        app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseRouting();
         app.UseCors();
         app.UseAuthentication(); 

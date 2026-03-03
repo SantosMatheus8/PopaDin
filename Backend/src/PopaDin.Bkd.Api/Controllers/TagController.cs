@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Tag;
-using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
@@ -23,22 +22,12 @@ public class TagController(ITagService tagService) : ControllerBase
     [ProducesResponseType(typeof(TagResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TagResponse>> CreateTag(
-        [FromBody] CreateTagRequest createTagRequest
-    )
+    public async Task<ActionResult<TagResponse>> CreateTag([FromBody] CreateTagRequest createTagRequest)
     {
-        try
-        {
-            var tag = createTagRequest.Adapt<Tag>();
-            Tag tagCreated = await tagService.CreateTagAsync(tag);
-            var tagResponse = tagCreated.Adapt<TagResponse>();
-
-            return Ok(tagResponse);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        var tag = createTagRequest.Adapt<Tag>();
+        Tag tagCreated = await tagService.CreateTagAsync(tag);
+        var tagResponse = tagCreated.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     /// <summary>
@@ -48,22 +37,16 @@ public class TagController(ITagService tagService) : ControllerBase
     /// <returns>Uma lista paginada de tags</returns>
     /// <response code="200">Sucesso, e retorna uma lista paginada de tags</response>
     [HttpGet]
-    [ProducesResponseType(typeof(Tag), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResult<TagResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PaginatedResult<Tag>>> GetTags([FromQuery] ListTagsRequest listTagsRequest)
+    public async Task<ActionResult<PaginatedResult<TagResponse>>> GetTags([FromQuery] ListTagsRequest listTagsRequest)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var listTags = listTagsRequest.Adapt<ListTags>();
-            PaginatedResult<Tag> tags = await tagService.GetTagsAsync(listTags);
-            return Ok(tags);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var listTags = listTagsRequest.Adapt<ListTags>();
+        PaginatedResult<Tag> tags = await tagService.GetTagsAsync(listTags);
+        var tagsResponse = tags.Adapt<PaginatedResult<TagResponse>>();
+        return Ok(tagsResponse);
     }
 
     /// <summary>
@@ -73,39 +56,27 @@ public class TagController(ITagService tagService) : ControllerBase
     /// <returns>O Tag consultado</returns>
     /// <response code="200">Sucesso, e retorna um Tag</response>
     [HttpGet("{tagId:decimal}")]
-    [ProducesResponseType(typeof(Tag), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TagResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Tag>> FindTagById([FromRoute] decimal tagId)
+    public async Task<ActionResult<TagResponse>> FindTagById([FromRoute] decimal tagId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Tag tag = await tagService.FindTagByIdAsync(tagId);
-            return Ok(tag);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Tag tag = await tagService.FindTagByIdAsync(tagId);
+        var tagResponse = tag.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     [HttpPut("{tagId:decimal}")]
-    [ProducesResponseType(typeof(Tag), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TagResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Tag>> UpdateTag([FromBody] UpdateTagRequest updateTagRequest,
+    public async Task<ActionResult<TagResponse>> UpdateTag([FromBody] UpdateTagRequest updateTagRequest,
         [FromRoute] decimal tagId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var tag = updateTagRequest.Adapt<Tag>();
-            Tag updatedTag = await tagService.UpdateTagAsync(tag, tagId);
-            return Ok(updatedTag);
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var tag = updateTagRequest.Adapt<Tag>();
+        Tag updatedTag = await tagService.UpdateTagAsync(tag, tagId);
+        var tagResponse = updatedTag.Adapt<TagResponse>();
+        return Ok(tagResponse);
     }
 
     /// <summary>
@@ -117,17 +88,10 @@ public class TagController(ITagService tagService) : ControllerBase
     [HttpDelete("{tagId:decimal}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Tag>> DeleteTag([FromRoute] decimal tagId)
+    public async Task<ActionResult> DeleteTag([FromRoute] decimal tagId)
     {
-        try
-        {
-            // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await tagService.DeleteTagAsync(tagId);
-            return NoContent();
-        }
-        catch (PopaBaseException ex)
-        {
-            return StatusCode(ex.StatusCode, new { ErrorMessage = ex.Message });
-        }
+        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await tagService.DeleteTagAsync(tagId);
+        return NoContent();
     }
 }

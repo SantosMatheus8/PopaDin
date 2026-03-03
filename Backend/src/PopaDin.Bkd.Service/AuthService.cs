@@ -18,7 +18,7 @@ public class AuthService(IUserRepository repository, ILogger<AuthService> logger
         if (user == null || !Hash.CheckPassword(password, user.Password))
         {
             logger.LogInformation("User nao encontrado");
-            throw new PopaBaseException("User não encontrado", 404);
+            throw new NotFoundException("User não encontrado");
         }
 
         var issuer = string.Empty;
