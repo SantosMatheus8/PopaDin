@@ -3,9 +3,9 @@ namespace PopaDin.Bkd.Infra.Queries;
 public static class TagQueries
 {
     public const string CreateTag = @"
-  INSERT INTO Tag 
+  INSERT INTO Tag
           (Name, TagType, Description, UserId, CreatedAt, UpdatedAt)
-          OUTPUT 
+          OUTPUT
             INSERTED.Id AS Id,
             INSERTED.Name AS Name,
             INSERTED.TagType AS TagType,
@@ -13,19 +13,27 @@ public static class TagQueries
             INSERTED.UserId AS UserId,
             INSERTED.CreatedAt AS CreatedAt,
             INSERTED.UpdatedAt AS UpdatedAt
-          VALUES 
-          (@Name, @TagType, @Description, 2, @CreatedAt, @UpdatedAt)
+          VALUES
+          (@Name, @TagType, @Description, @UserId, @CreatedAt, @UpdatedAt)
            ";
 
     public const string ListTags = @"
         SELECT
             t.Id,
-            t.Name As Name,
-            t.TagType As TagType,
-            t.Description As Description,
-            t.CreatedAt As CreatedAt,
-            t.UpdatedAt As UpdatedAt
+            t.Name AS Name,
+            t.TagType AS TagType,
+            t.Description AS Description,
+            t.CreatedAt AS CreatedAt,
+            t.UpdatedAt AS UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name,
+            u.Email,
+            u.Balance,
+            u.CreatedAt,
+            u.UpdatedAt
         FROM Tag t WITH(NOLOCK)
+        INNER JOIN [User] u WITH(NOLOCK) ON t.UserId = u.Id
         WHERE 1 = 1";
 
     public const string Count = @"
@@ -36,18 +44,26 @@ public static class TagQueries
     public const string FindTagsByIds = @"
         SELECT t.Id
         FROM Tag t WITH(NOLOCK)
-        WHERE t.Id IN @Ids";
+        WHERE t.Id IN @Ids AND t.UserId = @UserId";
 
     public const string FindTagById = @"
         SELECT
-            b.Id,
-            b.Name As Name,
-            b.TagType As TagType,
-            b.Description As Description,
-            b.CreatedAt As CreatedAt,
-            b.UpdatedAt As UpdatedAt
-        FROM Tag b WITH(NOLOCK)
-        WHERE b.Id = @TagId";
+            t.Id,
+            t.Name AS Name,
+            t.TagType AS TagType,
+            t.Description AS Description,
+            t.CreatedAt AS CreatedAt,
+            t.UpdatedAt AS UpdatedAt,
+            u.Id AS UserId,
+            u.Id AS Id,
+            u.Name,
+            u.Email,
+            u.Balance,
+            u.CreatedAt,
+            u.UpdatedAt
+        FROM Tag t WITH(NOLOCK)
+        INNER JOIN [User] u WITH(NOLOCK) ON t.UserId = u.Id
+        WHERE t.Id = @TagId AND t.UserId = @UserId";
 
     public const string UpdateTag = @"
         UPDATE Tag

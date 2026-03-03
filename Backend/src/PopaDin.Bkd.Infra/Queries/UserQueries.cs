@@ -55,6 +55,12 @@ public static class UserQueries
         DELETE FROM [User]
         WHERE Id = @UserId";
 
+    public const string UpdateBalance = @"
+        UPDATE [User]
+        SET Balance = Balance + @Amount,
+            UpdatedAt = @UpdatedAt
+        WHERE Id = @UserId";
+
         public const string FindUserByEmail = @"
         SELECT
             u.Id AS Id,

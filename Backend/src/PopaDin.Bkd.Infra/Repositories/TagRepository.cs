@@ -7,6 +7,7 @@ using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
 using PopaDin.Bkd.Domain.Models.Tag;
 using PopaDin.Bkd.Domain.Enums;
+using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -24,6 +25,7 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
                 Name = tag.Name,
                 TagType = tag.TagType,
                 Description = tag.Description,
+                UserId = tag.User.Id,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
@@ -46,28 +48,29 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
 
         logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listTags);
 
-        var result = await connection.QueryAsync<Tag>(
-            query, new
-            {
-                Id = listTags.Id,
-                Name = listTags.Name,
-                TagType = listTags.TagType,
-                Description = listTags.Description,
-                Offset = (listTags.Page - 1) * listTags.ItemsPerPage,
-                listTags.ItemsPerPage
-            }
-        );
-
-        var totalLines = await connection.QuerySingleAsync<int>(countQuery, new
+        var parameters = new
         {
             Id = listTags.Id,
             Name = listTags.Name,
             TagType = listTags.TagType,
             Description = listTags.Description,
+            UserId = listTags.UserId,
             Offset = (listTags.Page - 1) * listTags.ItemsPerPage,
             listTags.ItemsPerPage
-        });
+        };
 
+        var result = await connection.QueryAsync<Tag, User, Tag>(
+            query,
+            (tag, user) =>
+            {
+                tag.User = user;
+                return tag;
+            },
+            parameters,
+            splitOn: "UserId"
+        );
+
+        var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
 
         logger.LogInformation("Resultado: {@Resultado}. ", result);
 
@@ -86,10 +89,10 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
         var query = AddFilters(listTags, TagQueries.ListTags);
         query +=
             @$"
-                ORDER BY 
-                {listTags.OrderBy.GetEnumDescription()} 
-                {listTags.OrderDirection.GetEnumDescription()} 
-                OFFSET @Offset 
+                ORDER BY
+                {listTags.OrderBy.GetEnumDescription()}
+                {listTags.OrderDirection.GetEnumDescription()}
+                OFFSET @Offset
                 ROWS FETCH NEXT @ItemsPerPage ROWS ONLY
                 ";
         return query;
@@ -97,6 +100,7 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
 
     private static string AddFilters(ListTags listTags, string query)
     {
+        query += " AND t.UserId = @UserId ";
         if (listTags.Id.HasValue)
             query += " AND t.Id = @Id ";
         if (listTags.TagType.HasValue)
@@ -108,21 +112,31 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
         return query;
     }
 
-    public async Task<List<Tag>> FindTagsByIdsAsync(List<int> ids)
+    public async Task<List<Tag>> FindTagsByIdsAsync(List<int> ids, decimal userId)
     {
         logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagsByIds);
 
-        var result = await connection.QueryAsync<Tag>(TagQueries.FindTagsByIds, new { Ids = ids });
+        var result = await connection.QueryAsync<Tag>(TagQueries.FindTagsByIds, new { Ids = ids, UserId = userId });
 
         return result.ToList();
     }
 
-    public async Task<Tag> FindTagByIdAsync(decimal tagId)
+    public async Task<Tag> FindTagByIdAsync(decimal tagId, decimal userId)
     {
         logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagById);
 
-        var response = await connection.QueryFirstOrDefaultAsync<Tag>(TagQueries.FindTagById,
-            new { TagId = tagId });
+        var result = await connection.QueryAsync<Tag, User, Tag>(
+            TagQueries.FindTagById,
+            (tag, user) =>
+            {
+                tag.User = user;
+                return tag;
+            },
+            new { TagId = tagId, UserId = userId },
+            splitOn: "UserId"
+        );
+
+        var response = result.FirstOrDefault();
 
         logger.LogInformation("Resultado: {@Resultado}. ", response);
 
@@ -177,4 +191,3 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
         }
     }
 }
-

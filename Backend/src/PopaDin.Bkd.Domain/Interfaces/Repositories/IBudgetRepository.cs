@@ -10,4 +10,5 @@ public interface IBudgetRepository
     Task<Budget> FindBudgetByIdAsync(decimal budgetId, decimal userId);
     Task UpdateBudgetAsync(Budget budget);
     Task DeleteBudgetAsync(decimal budgetId);
+    Task FinishBudgetAsync(decimal budgetId);
 }

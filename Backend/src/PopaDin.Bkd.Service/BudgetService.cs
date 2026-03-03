@@ -61,6 +61,12 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
         await repository.DeleteBudgetAsync(budgetId);
     }
 
+    public async Task FinishBudgetAsync(decimal budgetId, decimal userId)
+    {
+        await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        await repository.FinishBudgetAsync(budgetId);
+    }
+
     private async Task<Budget> FindBudgetOrThrowExceptionAsync(decimal budgetId, decimal userId)
     {
         Budget budget = await repository.FindBudgetByIdAsync(budgetId, userId);

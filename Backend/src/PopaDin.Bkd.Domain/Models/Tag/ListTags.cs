@@ -8,6 +8,7 @@ public class ListTags
     public string Name { get; set; } = "";
     public OperationEnum? TagType { get; set; }
     public string? Description { get; set; }
+    public int UserId { get; set; }
     public OrderDirection OrderDirection { get; set; }
     public TagOrderBy OrderBy { get; set; }
     public int Page { get; set; } = 1;

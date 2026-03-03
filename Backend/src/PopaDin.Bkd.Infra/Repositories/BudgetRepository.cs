@@ -175,4 +175,28 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             throw;
         }
     }
+
+    public async Task FinishBudgetAsync(decimal budgetId)
+    {
+        await connection.OpenAsync();
+        var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FinishBudget);
+            var response = await connection.ExecuteAsync(BudgetQueries.FinishBudget,
+                new
+                {
+                    BudgetId = budgetId,
+                    FinishAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                }, transaction);
+            await transaction.CommitAsync();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            logger.LogError("Erro ao finalizar Budget : {Erro}", e);
+            throw;
+        }
+    }
 }

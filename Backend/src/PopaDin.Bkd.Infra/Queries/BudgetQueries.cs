@@ -69,4 +69,10 @@ public static class BudgetQueries
     public const string DeleteBudget = @"
         DELETE FROM Budget
         WHERE Id = @BudgetId";
+
+    public const string FinishBudget = @"
+        UPDATE Budget
+        SET FinishAt = @FinishAt,
+            UpdatedAt = @UpdatedAt
+        WHERE Id = @BudgetId";
 }

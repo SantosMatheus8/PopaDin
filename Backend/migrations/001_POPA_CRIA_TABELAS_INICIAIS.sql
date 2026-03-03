@@ -23,7 +23,6 @@ CREATE TABLE Budget (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(255) NOT NULL,
     Goal DECIMAL(18, 2) NOT NULL,
-    CurrentAmount DECIMAL(18, 2),
     FinishAt DATETIME2,
     UserId INT NOT NULL,
     CreatedAt DATETIME2 NOT NULL,
