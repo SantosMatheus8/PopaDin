@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.User;
 using PopaDin.Bkd.Domain.Interfaces.Services;
@@ -7,7 +8,7 @@ using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
-// [Authorize]
+[Authorize]
 [Route("v1/[controller]")]
 [ApiController]
 public class UserController(IUserService userService) : ControllerBase
@@ -18,16 +19,16 @@ public class UserController(IUserService userService) : ControllerBase
     /// <param name="createUserRequest">O objeto de requisicao para criar um user</param>
     /// <returns>O user criado</returns>
     /// <response code="201">Sucesso, e retorna um user</response>
+    [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest createUserRequest)
     {
         var user = createUserRequest.Adapt<User>();
         User userCreated = await userService.CreateUserAsync(user);
         var userResponse = userCreated.Adapt<UserResponse>();
-        return Ok(userResponse);
+        return StatusCode(StatusCodes.Status201Created, userResponse);
     }
 
     /// <summary>
@@ -38,11 +39,8 @@ public class UserController(IUserService userService) : ControllerBase
     /// <response code="200">Sucesso, e retorna uma lista paginada de users</response>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedResult<UserResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<UserResponse>>> GetUsers([FromQuery] ListUsersRequest listUsersRequest)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var listUsers = listUsersRequest.Adapt<ListUsers>();
         PaginatedResult<User> users = await userService.GetUsersAsync(listUsers);
         var usersResponse = users.Adapt<PaginatedResult<UserResponse>>();
@@ -60,7 +58,6 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> FindUserById([FromRoute] decimal userId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         User user = await userService.FindUserByIdAsync(userId);
         var userResponse = user.Adapt<UserResponse>();
         return Ok(userResponse);
@@ -72,7 +69,6 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest updateUserRequest,
         [FromRoute] decimal userId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var user = updateUserRequest.Adapt<User>();
         User updatedUser = await userService.UpdateUserAsync(user, userId);
         var userResponse = updatedUser.Adapt<UserResponse>();
@@ -90,7 +86,6 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteUser([FromRoute] decimal userId)
     {
-        // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         await userService.DeleteUserAsync(userId);
         return NoContent();
     }
