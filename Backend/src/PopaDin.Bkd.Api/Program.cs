@@ -6,7 +6,6 @@ using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using PopaDin.Bkd.Ioc;
-using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -72,12 +71,7 @@ public static class Program
 
     private static void ConfigureServices(IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped<SqlConnection>(provider =>
-        {
-            var configuration = provider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("Database");
-            return new SqlConnection(connectionString);
-        });
+        services.RegisterDatabaseDependencies(config);
         services.AddControllers();
         services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Clear());
         services.AddRouting(options => options.LowercaseUrls = true);

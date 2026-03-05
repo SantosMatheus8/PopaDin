@@ -1,6 +1,6 @@
 using Dapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
@@ -11,12 +11,13 @@ using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
-public class TagRepository(SqlConnection connection, ILogger<TagRepository> logger) : ITagRepository
+public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRepository> logger) : ITagRepository
 {
     public async Task<Tag> CreateTagAsync(Tag tag)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query a ser executada: {Sql}.", TagQueries.CreateTag);
@@ -29,13 +30,13 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
 
             return tagCreated.FirstOrDefault()!;
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao Criar Tag : {Erro}", e);
             throw;
         }
@@ -58,6 +59,8 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
             Offset = (listTags.Page - 1) * listTags.ItemsPerPage,
             listTags.ItemsPerPage
         };
+
+        using var connection = connectionFactory.CreateConnection();
 
         var result = await connection.QueryAsync<Tag, User, Tag>(
             query,
@@ -116,6 +119,8 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
     {
         logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagsByIds);
 
+        using var connection = connectionFactory.CreateConnection();
+
         var result = await connection.QueryAsync<Tag>(TagQueries.FindTagsByIds, new { Ids = ids, UserId = userId });
 
         return result.ToList();
@@ -124,6 +129,8 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
     public async Task<Tag> FindTagByIdAsync(decimal tagId, decimal userId)
     {
         logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagById);
+
+        using var connection = connectionFactory.CreateConnection();
 
         var result = await connection.QueryAsync<Tag, User, Tag>(
             TagQueries.FindTagById,
@@ -145,12 +152,13 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
 
     public async Task UpdateTagAsync(Tag tag)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", TagQueries.UpdateTag);
-            var response = await connection.ExecuteAsync(TagQueries.UpdateTag,
+            await connection.ExecuteAsync(TagQueries.UpdateTag,
                 new
                 {
                     TagId = tag.Id,
@@ -159,11 +167,11 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
                     Description = tag.Description,
                     UpdatedAt = DateTime.Now
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao editar Tag : {Erro}", e);
             throw;
         }
@@ -171,21 +179,22 @@ public class TagRepository(SqlConnection connection, ILogger<TagRepository> logg
 
     public async Task DeleteTagAsync(decimal tagId)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", TagQueries.DeleteTag);
-            var response = await connection.ExecuteAsync(TagQueries.DeleteTag,
+            await connection.ExecuteAsync(TagQueries.DeleteTag,
                 new
                 {
                     TagId = tagId
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao deletar Tag : {Erro}", e);
             throw;
         }

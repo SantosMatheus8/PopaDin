@@ -1,6 +1,6 @@
 using Dapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
@@ -9,12 +9,13 @@ using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
-public class UserRepository(SqlConnection connection, ILogger<UserRepository> logger) : IUserRepository
+public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<UserRepository> logger) : IUserRepository
 {
     public async Task<User> CreateUserAsync(User user)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query a ser executada: {Sql}.", UserQueries.CreateUser);
@@ -27,13 +28,13 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
 
             return userCreated.FirstOrDefault()!;
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao Criar User : {Erro}", e);
             throw;
         }
@@ -45,6 +46,8 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
         var countQuery = AddFilters(listUsers, UserQueries.Count);
 
         logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listUsers);
+
+        using var connection = connectionFactory.CreateConnection();
 
         var result = await connection.QueryAsync<User>(
             query, new
@@ -86,10 +89,10 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
         var query = AddFilters(listUsers, UserQueries.ListUsers);
         query +=
             @$"
-                ORDER BY 
-                {listUsers.OrderBy.GetEnumDescription()} 
-                {listUsers.OrderDirection.GetEnumDescription()} 
-                OFFSET @Offset 
+                ORDER BY
+                {listUsers.OrderBy.GetEnumDescription()}
+                {listUsers.OrderDirection.GetEnumDescription()}
+                OFFSET @Offset
                 ROWS FETCH NEXT @ItemsPerPage ROWS ONLY
                 ";
         return query;
@@ -112,6 +115,8 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
     {
         logger.LogInformation("Query executada: {Sql}.", UserQueries.FindUserById);
 
+        using var connection = connectionFactory.CreateConnection();
+
         var response = await connection.QueryFirstOrDefaultAsync<User>(UserQueries.FindUserById,
             new { UserId = userId });
 
@@ -122,12 +127,13 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
 
     public async Task UpdateUserAsync(User user)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", UserQueries.UpdateUser);
-            var response = await connection.ExecuteAsync(UserQueries.UpdateUser,
+            await connection.ExecuteAsync(UserQueries.UpdateUser,
                 new
                 {
                     UserId = user.Id,
@@ -137,11 +143,11 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
                     Balance = user.Balance,
                     UpdatedAt = DateTime.Now
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao editar User : {Erro}", e);
             throw;
         }
@@ -149,21 +155,22 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
 
     public async Task DeleteUserAsync(decimal userId)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", UserQueries.DeleteUser);
-            var response = await connection.ExecuteAsync(UserQueries.DeleteUser,
+            await connection.ExecuteAsync(UserQueries.DeleteUser,
                 new
                 {
                     UserId = userId
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao deletar User : {Erro}", e);
             throw;
         }
@@ -172,6 +179,8 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
     public async Task<User> FindUserByEmailAsync(string userEmail)
     {
         logger.LogInformation("Query executada: {Sql}.", UserQueries.FindUserByEmail);
+
+        using var connection = connectionFactory.CreateConnection();
 
         var response = await connection.QueryFirstOrDefaultAsync<User>(UserQueries.FindUserByEmail,
             new { UserEmail = userEmail });
@@ -183,22 +192,22 @@ public class UserRepository(SqlConnection connection, ILogger<UserRepository> lo
 
     public async Task UpdateBalanceAsync(decimal userId, double amount)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", UserQueries.UpdateBalance);
             await connection.ExecuteAsync(UserQueries.UpdateBalance,
                 new { UserId = userId, Amount = amount, UpdatedAt = DateTime.Now },
                 transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao atualizar Balance do User : {Erro}", e);
             throw;
         }
     }
 }
-

@@ -9,12 +9,20 @@ using PopaDin.Bkd.Infra.Publishers;
 using PopaDin.Application.Services;
 using Azure.Messaging.ServiceBus;
 using MongoDB.Driver;
+using PopaDin.Bkd.Domain.Interfaces;
+using PopaDin.Bkd.Infra;
 
 namespace PopaDin.Bkd.Ioc;
 
 [ExcludeFromCodeCoverage]
 public static class ServiceModuleExtensions
 {
+    public static void RegisterDatabaseDependencies(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("Database")!;
+        services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(connectionString));
+    }
+
     public static void RegisterDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddSingleton(configuration);

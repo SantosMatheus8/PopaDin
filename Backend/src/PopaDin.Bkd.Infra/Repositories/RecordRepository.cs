@@ -1,6 +1,6 @@
 using Dapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
@@ -12,12 +12,13 @@ using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
-public class RecordRepository(SqlConnection connection, ILogger<RecordRepository> logger) : IRecordRepository
+public class RecordRepository(IDbConnectionFactory connectionFactory, ILogger<RecordRepository> logger) : IRecordRepository
 {
     public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query a ser executada: {Sql}.", RecordQueries.CreateRecord);
@@ -39,13 +40,13 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                         new { RecordId = recordCreated.Id, TagId = tagId }, transaction);
             }
 
-            await transaction.CommitAsync();
+            transaction.Commit();
 
             return recordCreated;
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao Criar Record : {Erro}", e);
             throw;
         }
@@ -70,6 +71,8 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
         };
 
         var recordDictionary = new Dictionary<int, Record>();
+
+        using var connection = connectionFactory.CreateConnection();
 
         await connection.QueryAsync<Record, User, Tag, Record>(
             query,
@@ -137,6 +140,8 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
         var recordDictionary = new Dictionary<int, Record>();
 
+        using var connection = connectionFactory.CreateConnection();
+
         await connection.QueryAsync<Record, User, Tag, Record>(
             RecordQueries.FindRecordById,
             (record, user, tag) =>
@@ -166,8 +171,9 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
     public async Task UpdateRecordAsync(Record record, List<int> tagIds)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", RecordQueries.UpdateRecord);
@@ -193,11 +199,11 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
                         new { RecordId = record.Id, TagId = tagId }, transaction);
             }
 
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao editar Record : {Erro}", e);
             throw;
         }
@@ -205,21 +211,22 @@ public class RecordRepository(SqlConnection connection, ILogger<RecordRepository
 
     public async Task DeleteRecordAsync(decimal recordId)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", RecordQueries.DeleteRecord);
-            var response = await connection.ExecuteAsync(RecordQueries.DeleteRecord,
+            await connection.ExecuteAsync(RecordQueries.DeleteRecord,
                 new
                 {
                     RecordId = recordId
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao deletar Record : {Erro}", e);
             throw;
         }

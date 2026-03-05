@@ -1,6 +1,6 @@
 using Dapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
@@ -10,12 +10,13 @@ using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
-public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository> logger) : IBudgetRepository
+public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<BudgetRepository> logger) : IBudgetRepository
 {
     public async Task<Budget> CreateBudgetAsync(Budget budget)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query a ser executada: {Sql}.", BudgetQueries.CreateBudget);
@@ -27,13 +28,13 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
 
             return budgetCreated.FirstOrDefault()!;
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao Criar Budget : {Erro}", e);
             throw;
         }
@@ -55,6 +56,8 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
             Offset = (listBudgets.Page - 1) * listBudgets.ItemsPerPage,
             listBudgets.ItemsPerPage
         };
+
+        using var connection = connectionFactory.CreateConnection();
 
         var result = await connection.QueryAsync<Budget, User, Budget>(
             query,
@@ -111,6 +114,8 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
     {
         logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FindBudgetById);
 
+        using var connection = connectionFactory.CreateConnection();
+
         var result = await connection.QueryAsync<Budget, User, Budget>(
             BudgetQueries.FindBudgetById,
             (budget, user) =>
@@ -131,12 +136,13 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
 
     public async Task UpdateBudgetAsync(Budget budget)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", BudgetQueries.UpdateBudget);
-            var response = await connection.ExecuteAsync(BudgetQueries.UpdateBudget,
+            await connection.ExecuteAsync(BudgetQueries.UpdateBudget,
                 new
                 {
                     BudgetId = budget.Id,
@@ -144,11 +150,11 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
                     Goal = budget.Goal,
                     UpdatedAt = DateTime.Now
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao editar Budget : {Erro}", e);
             throw;
         }
@@ -156,21 +162,22 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
 
     public async Task DeleteBudgetAsync(decimal budgetId)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", BudgetQueries.DeleteBudget);
-            var response = await connection.ExecuteAsync(BudgetQueries.DeleteBudget,
+            await connection.ExecuteAsync(BudgetQueries.DeleteBudget,
                 new
                 {
                     BudgetId = budgetId
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao deletar Budget : {Erro}", e);
             throw;
         }
@@ -178,23 +185,24 @@ public class BudgetRepository(SqlConnection connection, ILogger<BudgetRepository
 
     public async Task FinishBudgetAsync(decimal budgetId)
     {
-        await connection.OpenAsync();
-        var transaction = await connection.BeginTransactionAsync();
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
         try
         {
             logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FinishBudget);
-            var response = await connection.ExecuteAsync(BudgetQueries.FinishBudget,
+            await connection.ExecuteAsync(BudgetQueries.FinishBudget,
                 new
                 {
                     BudgetId = budgetId,
                     FinishAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 }, transaction);
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             logger.LogError("Erro ao finalizar Budget : {Erro}", e);
             throw;
         }
