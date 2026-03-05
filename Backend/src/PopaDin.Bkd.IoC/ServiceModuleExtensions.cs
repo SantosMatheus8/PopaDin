@@ -2,16 +2,27 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
+using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Service;
 using PopaDin.Bkd.Infra.Repositories;
+using PopaDin.Bkd.Infra.Publishers;
 using PopaDin.Application.Services;
+using Azure.Messaging.ServiceBus;
 using MongoDB.Driver;
+using PopaDin.Bkd.Domain.Interfaces;
+using PopaDin.Bkd.Infra;
 
 namespace PopaDin.Bkd.Ioc;
 
 [ExcludeFromCodeCoverage]
 public static class ServiceModuleExtensions
 {
+    public static void RegisterDatabaseDependencies(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("Database")!;
+        services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(connectionString));
+    }
+
     public static void RegisterDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddSingleton(configuration);
@@ -29,6 +40,19 @@ public static class ServiceModuleExtensions
             return client.GetDatabase(databaseName);
         });
 
+        // Azure Service Bus
+        services.AddSingleton(sp =>
+        {
+            var connectionString = configuration["ServiceBusSettings:ConnectionString"];
+            return new ServiceBusClient(connectionString);
+        });
+        services.AddSingleton(sp =>
+        {
+            var client = sp.GetRequiredService<ServiceBusClient>();
+            var queueName = configuration["ServiceBusSettings:QueueName"];
+            return client.CreateSender(queueName);
+        });
+
         // Services & Repositories
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IBudgetRepository, BudgetRepository>();
@@ -41,5 +65,8 @@ public static class ServiceModuleExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<IAlertRepository, AlertRepository>();
+
+        // Publishers
+        services.AddScoped<IRecordEventPublisher, ServiceBusRecordEventPublisher>();
     }
 }

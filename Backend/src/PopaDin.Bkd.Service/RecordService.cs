@@ -1,5 +1,6 @@
 using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Exceptions;
+using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
@@ -12,6 +13,7 @@ public class RecordService(
     IRecordRepository repository,
     ITagRepository tagRepository,
     IUserRepository userRepository,
+    IRecordEventPublisher recordEventPublisher,
     ILogger<RecordService> logger) : IRecordService
 {
     public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, decimal userId)
@@ -36,6 +38,10 @@ public class RecordService(
 
         var balanceAmount = record.Operation == OperationEnum.Deposit ? record.Value : -record.Value;
         await userRepository.UpdateBalanceAsync(userId, balanceAmount);
+
+        var user = await userRepository.FindUserByIdAsync(userId);
+        await recordEventPublisher.PublishRecordCreatedAsync(
+            (int)userId, record.Value, record.Operation, user.Balance);
 
         return await FindRecordOrThrowExceptionAsync(recordCreated.Id!.Value, userId);
     }
