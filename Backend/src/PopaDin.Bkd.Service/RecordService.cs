@@ -1,11 +1,8 @@
-using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Models.Record;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Service;
 
@@ -16,68 +13,48 @@ public class RecordService(
     IRecordEventPublisher recordEventPublisher,
     ILogger<RecordService> logger) : IRecordService
 {
-    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, decimal userId)
+    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, int userId)
     {
         logger.LogInformation("Criando Record");
 
-        if (record.Value < 0)
-            throw new UnprocessableEntityException("O valor deve ser maior que zero.");
+        record.ValidateValue();
+        await ValidateTagsAsync(tagIds, userId);
 
-        if (tagIds.Count > 0)
-        {
-            var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds, userId);
-            var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
-            var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
-
-            if (missingIds.Count > 0)
-                throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
-        }
-
-        record.User = new User { Id = (int)userId };
+        record.User = new User { Id = userId };
         var recordCreated = await repository.CreateRecordAsync(record, tagIds);
 
-        var balanceAmount = record.Operation == OperationEnum.Deposit ? record.Value : -record.Value;
+        var balanceAmount = record.CalculateBalanceImpact();
         await userRepository.UpdateBalanceAsync(userId, balanceAmount);
 
         var user = await userRepository.FindUserByIdAsync(userId);
         await recordEventPublisher.PublishRecordCreatedAsync(
-            (int)userId, record.Value, record.Operation, user.Balance);
+            userId, record.Value, record.Operation, user.Balance);
 
-        return await FindRecordOrThrowExceptionAsync(recordCreated.Id!.Value, userId);
+        return await FindRecordOrThrowAsync(recordCreated.Id!.Value, userId);
     }
 
-    public async Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, decimal userId)
+    public async Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, int userId)
     {
         logger.LogInformation("Listando Record");
-        listRecords.UserId = (int)userId;
+        listRecords.UserId = userId;
         return await repository.GetRecordsAsync(listRecords);
     }
 
-    public async Task<Record> FindRecordByIdAsync(decimal recordId, decimal userId)
+    public async Task<Record> FindRecordByIdAsync(int recordId, int userId)
     {
         logger.LogInformation("Buscando um Record");
-        return await FindRecordOrThrowExceptionAsync(recordId, userId);
+        return await FindRecordOrThrowAsync(recordId, userId);
     }
 
-    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, decimal recordId, decimal userId)
+    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, int recordId, int userId)
     {
         logger.LogInformation("Editando um Record");
-        Record record = await FindRecordOrThrowExceptionAsync(recordId, userId);
+        Record record = await FindRecordOrThrowAsync(recordId, userId);
 
-        if (tagIds.Count > 0)
-        {
-            var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds, userId);
-            var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
-            var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
+        await ValidateTagsAsync(tagIds, userId);
 
-            if (missingIds.Count > 0)
-                throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
-        }
-
-        var revertOld = record.Operation == OperationEnum.Deposit ? -record.Value : record.Value;
-        var applyNew = updateRecordRequest.Operation == OperationEnum.Deposit
-            ? updateRecordRequest.Value
-            : -updateRecordRequest.Value;
+        var revertOld = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
+        var applyNew = updateRecordRequest.CalculateBalanceImpact();
         var netAmount = revertOld + applyNew;
 
         record.Operation = updateRecordRequest.Operation;
@@ -87,20 +64,32 @@ public class RecordService(
 
         await userRepository.UpdateBalanceAsync(userId, netAmount);
 
-        return await FindRecordOrThrowExceptionAsync(recordId, userId);
+        return await FindRecordOrThrowAsync(recordId, userId);
     }
 
-    public async Task DeleteRecordAsync(decimal recordId, decimal userId)
+    public async Task DeleteRecordAsync(int recordId, int userId)
     {
-        Record record = await FindRecordOrThrowExceptionAsync(recordId, userId);
+        Record record = await FindRecordOrThrowAsync(recordId, userId);
 
         await repository.DeleteRecordAsync(recordId);
 
-        var revertAmount = record.Operation == OperationEnum.Deposit ? -record.Value : record.Value;
+        var revertAmount = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
         await userRepository.UpdateBalanceAsync(userId, revertAmount);
     }
 
-    private async Task<Record> FindRecordOrThrowExceptionAsync(decimal recordId, decimal userId)
+    private async Task ValidateTagsAsync(List<int> tagIds, int userId)
+    {
+        if (tagIds.Count == 0) return;
+
+        var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds, userId);
+        var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
+        var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
+
+        if (missingIds.Count > 0)
+            throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
+    }
+
+    private async Task<Record> FindRecordOrThrowAsync(int recordId, int userId)
     {
         Record record = await repository.FindRecordByIdAsync(recordId, userId);
 

@@ -1,4 +1,6 @@
-namespace PopaDin.Bkd.Domain.Models.User;
+using PopaDin.Bkd.Domain.Exceptions;
+
+namespace PopaDin.Bkd.Domain.Models;
 
 public class User
 {
@@ -6,7 +8,13 @@ public class User
     public string Name { get; set; } = "";
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
-    public double Balance { get; set; }
+    public decimal Balance { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    public void ValidateBalance()
+    {
+        if (Balance < 0)
+            throw new UnprocessableEntityException("O valor deve ser maior que zero.");
+    }
 }

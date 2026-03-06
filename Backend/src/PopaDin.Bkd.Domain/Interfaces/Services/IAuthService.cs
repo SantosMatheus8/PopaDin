@@ -1,4 +1,6 @@
-using PopaDin.Bkd.Domain.Models.User;
+using PopaDin.Bkd.Domain.Models;
+
+namespace PopaDin.Bkd.Domain.Interfaces.Services;
 
 public interface IAuthService
 {

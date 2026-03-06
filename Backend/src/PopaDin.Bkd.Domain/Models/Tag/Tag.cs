@@ -1,6 +1,6 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Domain.Models.Tag;
+namespace PopaDin.Bkd.Domain.Models;
 
 public class Tag
 {
@@ -8,7 +8,7 @@ public class Tag
     public string Name { get; set; } = "";
     public OperationEnum? TagType { get; set; }
     public string? Description { get; set; }
-    public User.User User { get; set; } = new();
+    public User User { get; set; } = new();
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

@@ -6,7 +6,7 @@ public class RecordResponse
 {
     public int Id { get; set; }
     public OperationEnum Operation { get; set; }
-    public double Value { get; set; }
+    public decimal Value { get; set; }
     public FrequencyEnum Frequency { get; set; }
     public int UserId { get; set; }
     public DateTime CreatedAt { get; set; }

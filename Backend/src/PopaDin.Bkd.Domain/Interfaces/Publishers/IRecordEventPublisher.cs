@@ -4,5 +4,5 @@ namespace PopaDin.Bkd.Domain.Interfaces.Publishers;
 
 public interface IRecordEventPublisher
 {
-    Task PublishRecordCreatedAsync(int userId, double value, OperationEnum operation, double newBalance);
+    Task PublishRecordCreatedAsync(int userId, decimal value, OperationEnum operation, decimal newBalance);
 }

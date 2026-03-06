@@ -6,7 +6,6 @@ using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Service;
 using PopaDin.Bkd.Infra.Repositories;
 using PopaDin.Bkd.Infra.Publishers;
-using PopaDin.Application.Services;
 using Azure.Messaging.ServiceBus;
 using MongoDB.Driver;
 using PopaDin.Bkd.Domain.Interfaces;
@@ -53,20 +52,23 @@ public static class ServiceModuleExtensions
             return client.CreateSender(queueName);
         });
 
-        // Services & Repositories
+        // Services
         services.AddScoped<IBudgetService, BudgetService>();
-        services.AddScoped<IBudgetRepository, BudgetRepository>();
-        services.AddScoped<IRecordRepository, RecordRepository>();
         services.AddScoped<IRecordService, RecordService>();
-        services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAlertService, AlertService>();
+
+        // Repositories
+        services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<IRecordRepository, RecordRepository>();
+        services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
 
-        // Publishers
+        // Infrastructure
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IRecordEventPublisher, ServiceBusRecordEventPublisher>();
     }
 }

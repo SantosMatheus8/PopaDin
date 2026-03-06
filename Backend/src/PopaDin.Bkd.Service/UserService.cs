@@ -1,53 +1,56 @@
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Models.User;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
-using PopaDin.Bkd.Domain.Helpers;
 
 namespace PopaDin.Bkd.Service;
 
-public class UserService(IUserRepository repository, ILogger<UserService> logger) : IUserService
+public class UserService(
+    IUserRepository repository,
+    IPasswordHasher passwordHasher,
+    ILogger<UserService> logger) : IUserService
 {
     public async Task<User> CreateUserAsync(User user)
     {
         logger.LogInformation("Criando User");
 
-        if (user.Balance < 0)
-        {
-            throw new UnprocessableEntityException("O valor deve ser maior que zero.");
-        }
-        user.Password = Hash.HashPassword(user.Password);
-        
+        user.ValidateBalance();
+
+        var existingUser = await repository.FindUserByEmailAsync(user.Email);
+        if (existingUser != null)
+            throw new UnprocessableEntityException("Email já cadastrado.");
+
+        user.Password = passwordHasher.HashPassword(user.Password);
+
         return await repository.CreateUserAsync(user);
     }
 
-    public async Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers, decimal userId)
+    public async Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers, int userId)
     {
         logger.LogInformation("Listando User");
-        listUsers.Id = (int)userId;
+        listUsers.Id = userId;
         return await repository.GetUsersAsync(listUsers);
     }
 
-    public async Task<User> FindUserByIdAsync(decimal userId, decimal authenticatedUserId)
+    public async Task<User> FindUserByIdAsync(int userId, int authenticatedUserId)
     {
         logger.LogInformation("Buscando um User");
         ValidateUserOwnership(userId, authenticatedUserId);
-        return await FindUserOrThrowExceptionAsync(userId);
+        return await FindUserOrThrowAsync(userId);
     }
 
-    public async Task<User> UpdateUserAsync(User updateUserRequest, decimal userId, decimal authenticatedUserId)
+    public async Task<User> UpdateUserAsync(User updateUserRequest, int userId, int authenticatedUserId)
     {
         logger.LogInformation("Editando um User");
         ValidateUserOwnership(userId, authenticatedUserId);
-        User user = await FindUserOrThrowExceptionAsync(userId);
+        User user = await FindUserOrThrowAsync(userId);
 
         user.Name = updateUserRequest.Name;
         user.Balance = updateUserRequest.Balance;
 
         if (!string.IsNullOrEmpty(updateUserRequest.Password))
         {
-            user.Password = Hash.HashPassword(updateUserRequest.Password);
+            user.Password = passwordHasher.HashPassword(updateUserRequest.Password);
         }
 
         await repository.UpdateUserAsync(user);
@@ -55,14 +58,14 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         return await repository.FindUserByIdAsync(userId);
     }
 
-    public async Task DeleteUserAsync(decimal userId, decimal authenticatedUserId)
+    public async Task DeleteUserAsync(int userId, int authenticatedUserId)
     {
         ValidateUserOwnership(userId, authenticatedUserId);
-        await FindUserOrThrowExceptionAsync(userId);
+        await FindUserOrThrowAsync(userId);
         await repository.DeleteUserAsync(userId);
     }
 
-    private void ValidateUserOwnership(decimal userId, decimal authenticatedUserId)
+    private void ValidateUserOwnership(int userId, int authenticatedUserId)
     {
         if (userId != authenticatedUserId)
         {
@@ -71,7 +74,7 @@ public class UserService(IUserRepository repository, ILogger<UserService> logger
         }
     }
 
-    private async Task<User> FindUserOrThrowExceptionAsync(decimal userId)
+    private async Task<User> FindUserOrThrowAsync(int userId)
     {
         User user = await repository.FindUserByIdAsync(userId);
 

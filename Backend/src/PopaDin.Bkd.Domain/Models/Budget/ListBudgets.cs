@@ -1,6 +1,6 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Domain.Models.Budget;
+namespace PopaDin.Bkd.Domain.Models;
 
 public class ListBudgets
 {

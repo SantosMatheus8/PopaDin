@@ -1,13 +1,12 @@
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Domain.Interfaces.Services;
 
 public interface IUserService
 {
-    Task<User> CreateUserAsync(User User);
-    Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers, decimal userId);
-    Task<User> FindUserByIdAsync(decimal UserId, decimal authenticatedUserId);
-    Task<User> UpdateUserAsync(User updateUserRequest, decimal UserId, decimal authenticatedUserId);
-    Task DeleteUserAsync(decimal UserId, decimal authenticatedUserId);
+    Task<User> CreateUserAsync(User user);
+    Task<PaginatedResult<User>> GetUsersAsync(ListUsers listUsers, int userId);
+    Task<User> FindUserByIdAsync(int userId, int authenticatedUserId);
+    Task<User> UpdateUserAsync(User updateUserRequest, int userId, int authenticatedUserId);
+    Task DeleteUserAsync(int userId, int authenticatedUserId);
 }

@@ -1,6 +1,6 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Domain.Models.Tag;
+namespace PopaDin.Bkd.Domain.Models;
 
 public class ListTags
 {

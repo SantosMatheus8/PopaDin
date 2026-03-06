@@ -1,11 +1,11 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Domain.Models.Record;
+namespace PopaDin.Bkd.Domain.Models;
 
 public class ListRecords
 {
     public int? Id { get; set; }
-    public double? Value { get; set; }
+    public decimal? Value { get; set; }
     public FrequencyEnum? Frequency { get; set; }
     public OperationEnum? Operation { get; set; }
     public int UserId { get; set; }

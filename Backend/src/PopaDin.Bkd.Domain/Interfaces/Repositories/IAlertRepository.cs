@@ -1,4 +1,4 @@
-using PopaDin.Bkd.Domain.Models.Alert;
+using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Domain.Interfaces.Repositories;
 

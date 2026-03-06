@@ -3,8 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
-using PopaDin.Bkd.Domain.Models.Alert;
-using PopaDin.Bkd.Domain.Models.User;
+using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Infra.Documents;
 
 namespace PopaDin.Bkd.Infra.Repositories;
@@ -25,7 +24,7 @@ public class AlertRepository(IMongoDatabase database, ILogger<AlertRepository> l
             Threshold = alert.Threshold,
             Channel = alert.Channel,
             Active = alert.Active,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
 
         await Collection.InsertOneAsync(document);
@@ -42,14 +41,14 @@ public class AlertRepository(IMongoDatabase database, ILogger<AlertRepository> l
         var filter = Builders<AlertDocument>.Filter.Eq(a => a.UserId, userId);
         var documents = await Collection.Find(filter).ToListAsync();
 
-        logger.LogInformation("Resultado: {Count} alerts encontrados", documents.Count);
+        logger.LogInformation("Encontrados {Count} alerts", documents.Count);
 
         return documents.Select(MapToAlert).ToList();
     }
 
     public async Task<Alert?> FindAlertByIdAsync(string alertId, int userId)
     {
-        logger.LogInformation("Buscando Alert: {AlertId} do usuario: {UserId}", alertId, userId);
+        logger.LogInformation("Buscando Alert: {AlertId}", alertId);
 
         if (!ObjectId.TryParse(alertId, out _))
             return null;
@@ -58,8 +57,6 @@ public class AlertRepository(IMongoDatabase database, ILogger<AlertRepository> l
                      & Builders<AlertDocument>.Filter.Eq(a => a.UserId, userId);
 
         var document = await Collection.Find(filter).FirstOrDefaultAsync();
-
-        logger.LogInformation("Resultado: {@Resultado}", document);
 
         return document == null ? null : MapToAlert(document);
     }
@@ -89,7 +86,7 @@ public class AlertRepository(IMongoDatabase database, ILogger<AlertRepository> l
             Id = document.Id,
             User = new User { Id = document.UserId },
             Type = Enum.Parse<AlertType>(document.Type),
-            Threshold = document.Threshold,
+            Threshold = (decimal)document.Threshold,
             Channel = document.Channel,
             Active = document.Active,
             CreatedAt = document.CreatedAt

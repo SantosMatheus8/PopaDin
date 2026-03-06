@@ -5,8 +5,6 @@ using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
-using PopaDin.Bkd.Domain.Models.Budget;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -19,14 +17,14 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query a ser executada: {Sql}.", BudgetQueries.CreateBudget);
+            logger.LogInformation("Criando Budget no banco de dados");
             var budgetCreated = await connection.QueryAsync<Budget>(BudgetQueries.CreateBudget, new
             {
                 Name = budget.Name,
                 Goal = budget.Goal,
                 UserId = budget.User.Id,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             }, transaction);
             transaction.Commit();
 
@@ -35,7 +33,7 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao Criar Budget : {Erro}", e);
+            logger.LogError("Erro ao Criar Budget: {Message}", e.Message);
             throw;
         }
     }
@@ -45,7 +43,7 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
         var query = AddQueryPagination(listBudgets);
         var countQuery = AddFilters(listBudgets, BudgetQueries.Count);
 
-        logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listBudgets);
+        logger.LogInformation("Listando Budgets com paginação");
 
         var parameters = new
         {
@@ -72,14 +70,12 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
 
         var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
 
-        logger.LogInformation("Resultado: {@Resultado}. ", result);
-
         return new PaginatedResult<Budget>
         {
             Lines = result.ToList(),
             Page = listBudgets.Page,
             TotalPages = (int)Math.Ceiling(totalLines / (double)listBudgets.ItemsPerPage),
-            TotalItens = totalLines,
+            TotalItems = totalLines,
             PageSize = listBudgets.ItemsPerPage
         };
     }
@@ -110,9 +106,9 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
         return query;
     }
 
-    public async Task<Budget> FindBudgetByIdAsync(decimal budgetId, decimal userId)
+    public async Task<Budget> FindBudgetByIdAsync(int budgetId, int userId)
     {
-        logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FindBudgetById);
+        logger.LogInformation("Buscando Budget: {BudgetId}", budgetId);
 
         using var connection = connectionFactory.CreateConnection();
 
@@ -127,11 +123,7 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
             splitOn: "UserId"
         );
 
-        var budget = result.FirstOrDefault();
-
-        logger.LogInformation("Resultado: {@Resultado}. ", budget);
-
-        return budget!;
+        return result.FirstOrDefault()!;
     }
 
     public async Task UpdateBudgetAsync(Budget budget)
@@ -141,69 +133,66 @@ public class BudgetRepository(IDbConnectionFactory connectionFactory, ILogger<Bu
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", BudgetQueries.UpdateBudget);
+            logger.LogInformation("Atualizando Budget: {BudgetId}", budget.Id);
             await connection.ExecuteAsync(BudgetQueries.UpdateBudget,
                 new
                 {
                     BudgetId = budget.Id,
                     Name = budget.Name,
                     Goal = budget.Goal,
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.UtcNow
                 }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao editar Budget : {Erro}", e);
+            logger.LogError("Erro ao editar Budget: {Message}", e.Message);
             throw;
         }
     }
 
-    public async Task DeleteBudgetAsync(decimal budgetId)
+    public async Task DeleteBudgetAsync(int budgetId)
     {
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", BudgetQueries.DeleteBudget);
+            logger.LogInformation("Deletando Budget: {BudgetId}", budgetId);
             await connection.ExecuteAsync(BudgetQueries.DeleteBudget,
-                new
-                {
-                    BudgetId = budgetId
-                }, transaction);
+                new { BudgetId = budgetId }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao deletar Budget : {Erro}", e);
+            logger.LogError("Erro ao deletar Budget: {Message}", e.Message);
             throw;
         }
     }
 
-    public async Task FinishBudgetAsync(decimal budgetId)
+    public async Task FinishBudgetAsync(int budgetId)
     {
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", BudgetQueries.FinishBudget);
+            logger.LogInformation("Finalizando Budget: {BudgetId}", budgetId);
             await connection.ExecuteAsync(BudgetQueries.FinishBudget,
                 new
                 {
                     BudgetId = budgetId,
-                    FinishAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    FinishAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao finalizar Budget : {Erro}", e);
+            logger.LogError("Erro ao finalizar Budget: {Message}", e.Message);
             throw;
         }
     }
