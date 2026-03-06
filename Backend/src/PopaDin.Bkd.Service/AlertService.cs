@@ -2,60 +2,47 @@ using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
-using PopaDin.Bkd.Domain.Models.Alert;
-using PopaDin.Bkd.Domain.Models.User;
+using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Service;
 
 public class AlertService(IAlertRepository repository, ILogger<AlertService> logger) : IAlertService
 {
-    private static readonly HashSet<string> ValidTypes = new(
-        Enum.GetNames<AlertType>()
-    );
-
-    public async Task<Alert> CreateAlertAsync(Alert alert, decimal userId)
+    public async Task<Alert> CreateAlertAsync(Alert alert, int userId)
     {
         logger.LogInformation("Criando Alert");
 
-        if (!ValidTypes.Contains(alert.Type.ToString()))
-        {
-            throw new UnprocessableEntityException("Tipo de alerta inválido.");
-        }
+        alert.ValidateThreshold();
 
-        if (alert.Threshold <= 0)
-        {
-            throw new UnprocessableEntityException("O threshold deve ser maior que zero.");
-        }
-
-        alert.User = new User { Id = (int)userId };
+        alert.User = new User { Id = userId };
         alert.Active = true;
 
         return await repository.CreateAlertAsync(alert);
     }
 
-    public async Task<List<Alert>> GetAlertsByUserIdAsync(decimal userId)
+    public async Task<List<Alert>> GetAlertsByUserIdAsync(int userId)
     {
         logger.LogInformation("Listando Alerts");
-        return await repository.GetAlertsByUserIdAsync((int)userId);
+        return await repository.GetAlertsByUserIdAsync(userId);
     }
 
-    public async Task ToggleAlertAsync(string alertId, bool active, decimal userId)
+    public async Task ToggleAlertAsync(string alertId, bool active, int userId)
     {
         logger.LogInformation("Alterando status do Alert");
-        await FindAlertOrThrowExceptionAsync(alertId, userId);
+        await FindAlertOrThrowAsync(alertId, userId);
         await repository.ToggleAlertAsync(alertId, active);
     }
 
-    public async Task DeleteAlertAsync(string alertId, decimal userId)
+    public async Task DeleteAlertAsync(string alertId, int userId)
     {
         logger.LogInformation("Deletando Alert");
-        await FindAlertOrThrowExceptionAsync(alertId, userId);
+        await FindAlertOrThrowAsync(alertId, userId);
         await repository.DeleteAlertAsync(alertId);
     }
 
-    private async Task<Alert> FindAlertOrThrowExceptionAsync(string alertId, decimal userId)
+    private async Task<Alert> FindAlertOrThrowAsync(string alertId, int userId)
     {
-        var alert = await repository.FindAlertByIdAsync(alertId, (int)userId);
+        var alert = await repository.FindAlertByIdAsync(alertId, userId);
 
         if (alert == null)
         {

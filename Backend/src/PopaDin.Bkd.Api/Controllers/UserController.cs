@@ -4,7 +4,6 @@ using PopaDin.Bkd.Api.Dtos.User;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
-using PopaDin.Bkd.Domain.Models.User;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -15,12 +14,6 @@ namespace PopaDin.Bkd.Api.Controllers;
 [ApiController]
 public class UserController(IUserService userService) : ControllerBase
 {
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de criar um user
-    /// </summary>
-    /// <param name="createUserRequest">O objeto de requisicao para criar um user</param>
-    /// <returns>O user criado</returns>
-    /// <response code="201">Sucesso, e retorna um user</response>
     [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
@@ -33,65 +26,47 @@ public class UserController(IUserService userService) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, userResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de buscar uma lista paginada de users
-    /// </summary>
-    /// <param name="listUsersRequest">O objeto de requisicao para buscar a lista paginada de users</param>
-    /// <returns>Uma lista paginada de users</returns>
-    /// <response code="200">Sucesso, e retorna uma lista paginada de users</response>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedResult<UserResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedResult<UserResponse>>> GetUsers([FromQuery] ListUsersRequest listUsersRequest)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var listUsers = listUsersRequest.Adapt<ListUsers>();
         PaginatedResult<User> users = await userService.GetUsersAsync(listUsers, userId);
         var usersResponse = users.Adapt<PaginatedResult<UserResponse>>();
         return Ok(usersResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de buscar um User
-    /// </summary>
-    /// <param name="userId">O codigo User</param>
-    /// <returns>O User consultado</returns>
-    /// <response code="200">Sucesso, e retorna um User</response>
-    [HttpGet("{userId:decimal}")]
+    [HttpGet("{userId:int}")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserResponse>> FindUserById([FromRoute] decimal userId)
+    public async Task<ActionResult<UserResponse>> FindUserById([FromRoute] int userId)
     {
-        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var authenticatedUserId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         User user = await userService.FindUserByIdAsync(userId, authenticatedUserId);
         var userResponse = user.Adapt<UserResponse>();
         return Ok(userResponse);
     }
 
-    [HttpPut("{userId:decimal}")]
+    [HttpPut("{userId:int}")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> UpdateUser([FromBody] UpdateUserRequest updateUserRequest,
-        [FromRoute] decimal userId)
+        [FromRoute] int userId)
     {
-        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var authenticatedUserId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = updateUserRequest.Adapt<User>();
         User updatedUser = await userService.UpdateUserAsync(user, userId, authenticatedUserId);
         var userResponse = updatedUser.Adapt<UserResponse>();
         return Ok(userResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de deletar um user
-    /// </summary>
-    /// <param name="userId">O codigo do user</param>
-    /// <returns>Confirmação de deleção</returns>
-    /// <response code="204">Sucesso, e retorna confirmação de deleção</response>
-    [HttpDelete("{userId:decimal}")]
+    [HttpDelete("{userId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteUser([FromRoute] decimal userId)
+    public async Task<ActionResult> DeleteUser([FromRoute] int userId)
     {
-        var authenticatedUserId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var authenticatedUserId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await userService.DeleteUserAsync(userId, authenticatedUserId);
         return NoContent();
     }

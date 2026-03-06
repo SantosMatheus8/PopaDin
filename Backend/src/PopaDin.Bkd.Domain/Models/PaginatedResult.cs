@@ -7,6 +7,6 @@ public class PaginatedResult<T>
     public int PageSize { get; set; }
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
-    public int TotalItens { get; set; }
+    public int TotalItems { get; set; }
     public int TotalPages { get; set; }
 }

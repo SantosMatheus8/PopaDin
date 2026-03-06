@@ -2,72 +2,64 @@ using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Models.Budget;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Service;
 
 public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> logger) : IBudgetService
 {
-    public async Task<Budget> CreateBudgetAsync(Budget budget, decimal userId)
+    public async Task<Budget> CreateBudgetAsync(Budget budget, int userId)
     {
         logger.LogInformation("Criando Budget");
 
-        if (budget.Goal < 1)
-        {
-            throw new UnprocessableEntityException("A meta deve ser maior que um.");
-        }
+        budget.ValidateGoal();
 
-        budget.User = new User { Id = (int)userId };
+        budget.User = new User { Id = userId };
         var budgetCreated = await repository.CreateBudgetAsync(budget);
 
-        return await FindBudgetOrThrowExceptionAsync(budgetCreated.Id!.Value, userId);
+        return await FindBudgetOrThrowAsync(budgetCreated.Id!.Value, userId);
     }
 
-    public async Task<PaginatedResult<Budget>> GetBudgetsAsync(ListBudgets listBudgets, decimal userId)
+    public async Task<PaginatedResult<Budget>> GetBudgetsAsync(ListBudgets listBudgets, int userId)
     {
         logger.LogInformation("Listando Budget");
-        listBudgets.UserId = (int)userId;
+        listBudgets.UserId = userId;
         return await repository.GetBudgetsAsync(listBudgets);
     }
 
-    public async Task<Budget> FindBudgetByIdAsync(decimal budgetId, decimal userId)
+    public async Task<Budget> FindBudgetByIdAsync(int budgetId, int userId)
     {
         logger.LogInformation("Buscando um Budget");
-        return await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        return await FindBudgetOrThrowAsync(budgetId, userId);
     }
 
-    public async Task<Budget> UpdateBudgetAsync(Budget updateBudgetRequest, decimal budgetId, decimal userId)
+    public async Task<Budget> UpdateBudgetAsync(Budget updateBudgetRequest, int budgetId, int userId)
     {
         logger.LogInformation("Editando um Budget");
 
-        if (updateBudgetRequest.Goal < 1)
-        {
-            throw new UnprocessableEntityException("A meta deve ser maior que um.");
-        }
+        updateBudgetRequest.ValidateGoal();
 
-        Budget budget = await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        Budget budget = await FindBudgetOrThrowAsync(budgetId, userId);
 
         budget.Name = updateBudgetRequest.Name;
         budget.Goal = updateBudgetRequest.Goal;
         await repository.UpdateBudgetAsync(budget);
 
-        return await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        return await FindBudgetOrThrowAsync(budgetId, userId);
     }
 
-    public async Task DeleteBudgetAsync(decimal budgetId, decimal userId)
+    public async Task DeleteBudgetAsync(int budgetId, int userId)
     {
-        await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        await FindBudgetOrThrowAsync(budgetId, userId);
         await repository.DeleteBudgetAsync(budgetId);
     }
 
-    public async Task FinishBudgetAsync(decimal budgetId, decimal userId)
+    public async Task FinishBudgetAsync(int budgetId, int userId)
     {
-        await FindBudgetOrThrowExceptionAsync(budgetId, userId);
+        await FindBudgetOrThrowAsync(budgetId, userId);
         await repository.FinishBudgetAsync(budgetId);
     }
 
-    private async Task<Budget> FindBudgetOrThrowExceptionAsync(decimal budgetId, decimal userId)
+    private async Task<Budget> FindBudgetOrThrowAsync(int budgetId, int userId)
     {
         Budget budget = await repository.FindBudgetByIdAsync(budgetId, userId);
 

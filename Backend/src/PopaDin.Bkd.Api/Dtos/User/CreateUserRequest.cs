@@ -15,5 +15,5 @@ public class CreateUserRequest
     [MinLength(6, ErrorMessage = "A senha deve ter no mínimo 6 caracteres")]
     public string Password { get; set; } = "";
 
-    public double Balance { get; set; }
+    public decimal Balance { get; set; }
 }

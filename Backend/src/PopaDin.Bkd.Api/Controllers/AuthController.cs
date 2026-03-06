@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Auth;
 using PopaDin.Bkd.Api.Dtos.User;
+using PopaDin.Bkd.Domain.Interfaces.Services;
 
-namespace PopaDin.API.Controllers;
+namespace PopaDin.Bkd.Api.Controllers;
 
 [Route("v1/[controller]")]
 [ApiController]

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Interfaces.Publishers;
@@ -11,7 +10,7 @@ public class ServiceBusRecordEventPublisher(
     ServiceBusSender sender,
     ILogger<ServiceBusRecordEventPublisher> logger) : IRecordEventPublisher
 {
-    public async Task PublishRecordCreatedAsync(int userId, double value, OperationEnum operation, double newBalance)
+    public async Task PublishRecordCreatedAsync(int userId, decimal value, OperationEnum operation, decimal newBalance)
     {
         var eventPayload = new
         {

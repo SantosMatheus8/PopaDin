@@ -5,9 +5,7 @@ using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
-using PopaDin.Bkd.Domain.Models.Tag;
 using PopaDin.Bkd.Domain.Enums;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -20,15 +18,15 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query a ser executada: {Sql}.", TagQueries.CreateTag);
+            logger.LogInformation("Criando Tag no banco de dados");
             var tagCreated = await connection.QueryAsync<Tag>(TagQueries.CreateTag, new
             {
                 Name = tag.Name,
                 TagType = tag.TagType,
                 Description = tag.Description,
                 UserId = tag.User.Id,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             }, transaction);
             transaction.Commit();
 
@@ -37,7 +35,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao Criar Tag : {Erro}", e);
+            logger.LogError("Erro ao Criar Tag: {Message}", e.Message);
             throw;
         }
     }
@@ -47,7 +45,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         var query = AddQueryPagination(listTags);
         var countQuery = AddFilters(listTags, TagQueries.Count);
 
-        logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listTags);
+        logger.LogInformation("Listando Tags com paginação");
 
         var parameters = new
         {
@@ -75,14 +73,12 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
 
         var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
 
-        logger.LogInformation("Resultado: {@Resultado}. ", result);
-
         return new PaginatedResult<Tag>
         {
             Lines = result.ToList(),
             Page = listTags.Page,
             TotalPages = (int)Math.Ceiling(totalLines / (double)listTags.ItemsPerPage),
-            TotalItens = totalLines,
+            TotalItems = totalLines,
             PageSize = listTags.ItemsPerPage
         };
     }
@@ -115,9 +111,9 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         return query;
     }
 
-    public async Task<List<Tag>> FindTagsByIdsAsync(List<int> ids, decimal userId)
+    public async Task<List<Tag>> FindTagsByIdsAsync(List<int> ids, int userId)
     {
-        logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagsByIds);
+        logger.LogInformation("Buscando Tags por Ids");
 
         using var connection = connectionFactory.CreateConnection();
 
@@ -126,9 +122,9 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         return result.ToList();
     }
 
-    public async Task<Tag> FindTagByIdAsync(decimal tagId, decimal userId)
+    public async Task<Tag> FindTagByIdAsync(int tagId, int userId)
     {
-        logger.LogInformation("Query executada: {Sql}.", TagQueries.FindTagById);
+        logger.LogInformation("Buscando Tag: {TagId}", tagId);
 
         using var connection = connectionFactory.CreateConnection();
 
@@ -143,11 +139,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
             splitOn: "UserId"
         );
 
-        var response = result.FirstOrDefault();
-
-        logger.LogInformation("Resultado: {@Resultado}. ", response);
-
-        return response!;
+        return result.FirstOrDefault()!;
     }
 
     public async Task UpdateTagAsync(Tag tag)
@@ -157,7 +149,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", TagQueries.UpdateTag);
+            logger.LogInformation("Atualizando Tag: {TagId}", tag.Id);
             await connection.ExecuteAsync(TagQueries.UpdateTag,
                 new
                 {
@@ -165,37 +157,34 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
                     Name = tag.Name,
                     TagType = tag.TagType,
                     Description = tag.Description,
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.UtcNow
                 }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao editar Tag : {Erro}", e);
+            logger.LogError("Erro ao editar Tag: {Message}", e.Message);
             throw;
         }
     }
 
-    public async Task DeleteTagAsync(decimal tagId)
+    public async Task DeleteTagAsync(int tagId)
     {
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", TagQueries.DeleteTag);
+            logger.LogInformation("Deletando Tag: {TagId}", tagId);
             await connection.ExecuteAsync(TagQueries.DeleteTag,
-                new
-                {
-                    TagId = tagId
-                }, transaction);
+                new { TagId = tagId }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao deletar Tag : {Erro}", e);
+            logger.LogError("Erro ao deletar Tag: {Message}", e.Message);
             throw;
         }
     }

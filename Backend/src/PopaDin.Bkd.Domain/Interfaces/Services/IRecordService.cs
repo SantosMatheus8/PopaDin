@@ -1,13 +1,12 @@
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Models.Record;
 
 namespace PopaDin.Bkd.Domain.Interfaces.Services;
 
 public interface IRecordService
 {
-    Task<Record> CreateRecordAsync(Record record, List<int> tagIds, decimal userId);
-    Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, decimal userId);
-    Task<Record> FindRecordByIdAsync(decimal recordId, decimal userId);
-    Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, decimal recordId, decimal userId);
-    Task DeleteRecordAsync(decimal recordId, decimal userId);
+    Task<Record> CreateRecordAsync(Record record, List<int> tagIds, int userId);
+    Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, int userId);
+    Task<Record> FindRecordByIdAsync(int recordId, int userId);
+    Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, int recordId, int userId);
+    Task DeleteRecordAsync(int recordId, int userId);
 }

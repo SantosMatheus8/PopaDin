@@ -3,7 +3,6 @@ using PopaDin.Bkd.Api.Dtos.Record;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
-using PopaDin.Bkd.Domain.Models.Record;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,86 +14,61 @@ namespace PopaDin.Bkd.Api.Controllers;
 [Authorize]
 public class RecordController(IRecordService recordService) : ControllerBase
 {
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de criar um record
-    /// </summary>
-    /// <param name="createRecordRequest">O objeto de requisicao para criar um record</param>
-    /// <returns>O record criado</returns>
-    /// <response code="201">Sucesso, e retorna um record</response>
     [HttpPost]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> CreateRecord([FromBody] CreateRecordRequest createRecordRequest)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = createRecordRequest.Adapt<Record>();
         Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds, userId);
         var recordResponse = recordCreated.Adapt<RecordResponse>();
-        return Ok(recordResponse);
+        return StatusCode(StatusCodes.Status201Created, recordResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de buscar uma lista paginada de records
-    /// </summary>
-    /// <param name="listRecordsRequest">O objeto de requisicao para buscar a lista paginada de records</param>
-    /// <returns>Uma lista paginada de records</returns>
-    /// <response code="200">Sucesso, e retorna uma lista paginada de records</response>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedResult<RecordResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PaginatedResult<RecordResponse>>> GetRecords([FromQuery] ListRecordsRequest listRecordsRequest)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var listRecords = listRecordsRequest.Adapt<ListRecords>();
         PaginatedResult<Record> records = await recordService.GetRecordsAsync(listRecords, userId);
         var recordsResponse = records.Adapt<PaginatedResult<RecordResponse>>();
         return Ok(recordsResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de buscar um Record
-    /// </summary>
-    /// <param name="recordId">O codigo Record</param>
-    /// <returns>O Record consultado</returns>
-    /// <response code="200">Sucesso, e retorna um Record</response>
-    [HttpGet("{recordId:decimal}")]
+    [HttpGet("{recordId:int}")]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] decimal recordId)
+    public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] int recordId)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         Record record = await recordService.FindRecordByIdAsync(recordId, userId);
         var recordResponse = record.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }
 
-    [HttpPut("{recordId:decimal}")]
+    [HttpPut("{recordId:int}")]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
-        [FromRoute] decimal recordId)
+        [FromRoute] int recordId)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = updateRecordRequest.Adapt<Record>();
         Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId, userId);
         var recordResponse = updatedRecord.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }
 
-    /// <summary>
-    ///     Atraves dessa rota voce sera capaz de deletar um record
-    /// </summary>
-    /// <param name="recordId">O codigo do record</param>
-    /// <returns>Confirmação de deleção</returns>
-    /// <response code="204">Sucesso, e retorna confirmação de deleção</response>
-    [HttpDelete("{recordId:decimal}")]
+    [HttpDelete("{recordId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteRecord([FromRoute] decimal recordId)
+    public async Task<ActionResult> DeleteRecord([FromRoute] int recordId)
     {
-        var userId = decimal.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await recordService.DeleteRecordAsync(recordId, userId);
         return NoContent();
     }

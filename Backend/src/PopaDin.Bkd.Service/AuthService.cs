@@ -2,22 +2,26 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using PopaDin.Bkd.Domain.Exceptions;
-using PopaDin.Bkd.Domain.Helpers;
+using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
-using PopaDin.Bkd.Domain.Models.User;
+using PopaDin.Bkd.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace PopaDin.Application.Services;
+namespace PopaDin.Bkd.Service;
 
-public class AuthService(IUserRepository repository, IConfiguration configuration, ILogger<AuthService> logger) : IAuthService
+public class AuthService(
+    IUserRepository repository,
+    IPasswordHasher passwordHasher,
+    IConfiguration configuration,
+    ILogger<AuthService> logger) : IAuthService
 {
     public async Task<string> GenerateToken(string email, string password)
     {
         var user = await repository.FindUserByEmailAsync(email);
 
-        if (user == null || !Hash.CheckPassword(password, user.Password))
+        if (user == null || !passwordHasher.VerifyPassword(password, user.Password))
         {
             logger.LogWarning("Tentativa de login com credenciais inválidas para o email: {Email}", email);
             throw new UnauthorizedException("Credenciais inválidas");

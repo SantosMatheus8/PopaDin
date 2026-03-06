@@ -5,7 +5,6 @@ using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Infra.Queries;
 using PopaDin.Bkd.Domain.Models;
 using PopaDin.Bkd.Domain.Utils;
-using PopaDin.Bkd.Domain.Models.User;
 
 namespace PopaDin.Bkd.Infra.Repositories;
 
@@ -18,15 +17,15 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query a ser executada: {Sql}.", UserQueries.CreateUser);
+            logger.LogInformation("Criando User no banco de dados");
             var userCreated = await connection.QueryAsync<User>(UserQueries.CreateUser, new
             {
                 Name = user.Name,
                 Email = user.Email,
                 Balance = user.Balance,
                 Password = user.Password,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             }, transaction);
             transaction.Commit();
 
@@ -35,7 +34,7 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao Criar User : {Erro}", e);
+            logger.LogError("Erro ao Criar User: {Message}", e.Message);
             throw;
         }
     }
@@ -45,23 +44,9 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         var query = AddQueryPagination(listUsers);
         var countQuery = AddFilters(listUsers, UserQueries.Count);
 
-        logger.LogInformation("Query a ser executada: {Sql}. with parameters: {@Parameters}", query, listUsers);
+        logger.LogInformation("Listando Users com paginação");
 
-        using var connection = connectionFactory.CreateConnection();
-
-        var result = await connection.QueryAsync<User>(
-            query, new
-            {
-                Id = listUsers.Id,
-                Name = listUsers.Name,
-                Email = listUsers.Email,
-                Balance = listUsers.Balance,
-                Offset = (listUsers.Page - 1) * listUsers.ItemsPerPage,
-                listUsers.ItemsPerPage
-            }
-        );
-
-        var totalLines = await connection.QuerySingleAsync<int>(countQuery, new
+        var parameters = new
         {
             Id = listUsers.Id,
             Name = listUsers.Name,
@@ -69,17 +54,19 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
             Balance = listUsers.Balance,
             Offset = (listUsers.Page - 1) * listUsers.ItemsPerPage,
             listUsers.ItemsPerPage
-        });
+        };
 
+        using var connection = connectionFactory.CreateConnection();
 
-        logger.LogInformation("Resultado: {@Resultado}. ", result);
+        var result = await connection.QueryAsync<User>(query, parameters);
+        var totalLines = await connection.QuerySingleAsync<int>(countQuery, parameters);
 
         return new PaginatedResult<User>
         {
             Lines = result.ToList(),
             Page = listUsers.Page,
             TotalPages = (int)Math.Ceiling(totalLines / (double)listUsers.ItemsPerPage),
-            TotalItens = totalLines,
+            TotalItems = totalLines,
             PageSize = listUsers.ItemsPerPage
         };
     }
@@ -111,16 +98,14 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         return query;
     }
 
-    public async Task<User> FindUserByIdAsync(decimal userId)
+    public async Task<User> FindUserByIdAsync(int userId)
     {
-        logger.LogInformation("Query executada: {Sql}.", UserQueries.FindUserById);
+        logger.LogInformation("Buscando User por Id: {UserId}", userId);
 
         using var connection = connectionFactory.CreateConnection();
 
         var response = await connection.QueryFirstOrDefaultAsync<User>(UserQueries.FindUserById,
             new { UserId = userId });
-
-        logger.LogInformation("Resultado: {@Resultado}. ", response);
 
         return response!;
     }
@@ -132,7 +117,7 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", UserQueries.UpdateUser);
+            logger.LogInformation("Atualizando User: {UserId}", user.Id);
             await connection.ExecuteAsync(UserQueries.UpdateUser,
                 new
                 {
@@ -141,72 +126,67 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
                     Email = user.Email,
                     Password = user.Password,
                     Balance = user.Balance,
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.UtcNow
                 }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao editar User : {Erro}", e);
+            logger.LogError("Erro ao editar User: {Message}", e.Message);
             throw;
         }
     }
 
-    public async Task DeleteUserAsync(decimal userId)
+    public async Task DeleteUserAsync(int userId)
     {
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", UserQueries.DeleteUser);
+            logger.LogInformation("Deletando User: {UserId}", userId);
             await connection.ExecuteAsync(UserQueries.DeleteUser,
-                new
-                {
-                    UserId = userId
-                }, transaction);
+                new { UserId = userId }, transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao deletar User : {Erro}", e);
+            logger.LogError("Erro ao deletar User: {Message}", e.Message);
             throw;
         }
     }
 
     public async Task<User> FindUserByEmailAsync(string userEmail)
     {
-        logger.LogInformation("Query executada: {Sql}.", UserQueries.FindUserByEmail);
+        logger.LogInformation("Buscando User por Email");
 
         using var connection = connectionFactory.CreateConnection();
 
         var response = await connection.QueryFirstOrDefaultAsync<User>(UserQueries.FindUserByEmail,
             new { UserEmail = userEmail });
 
-        logger.LogInformation("Resultado: {@Resultado}. ", response);
-
         return response!;
     }
 
-    public async Task UpdateBalanceAsync(decimal userId, double amount)
+    public async Task UpdateBalanceAsync(int userId, decimal amount)
     {
         using var connection = connectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            logger.LogInformation("Query executada: {Sql}.", UserQueries.UpdateBalance);
+            logger.LogInformation("Atualizando Balance do User: {UserId}", userId);
             await connection.ExecuteAsync(UserQueries.UpdateBalance,
-                new { UserId = userId, Amount = amount, UpdatedAt = DateTime.Now },
+                new { UserId = userId, Amount = amount, UpdatedAt = DateTime.UtcNow },
                 transaction);
             transaction.Commit();
         }
         catch (Exception e)
         {
             transaction.Rollback();
-            logger.LogError("Erro ao atualizar Balance do User : {Erro}", e);
+            logger.LogError("Erro ao atualizar Balance do User: {Message}", e.Message);
             throw;
         }
     }
