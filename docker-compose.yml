@@ -3,33 +3,33 @@ version: '3.9'
 services:
   sqlserver-popa:
     build:
-      context: .
+      context: ./Backend
       dockerfile: Dockerfile
     container_name: sqlserver-popa
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong!Passw0rd
+      - SA_PASSWORD=${SA_PASSWORD}
     ports:
       - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
-      - ./migrations:/migrations
+      - ./Backend/migrations:/migrations
     healthcheck:
-      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "sqlserver-popa", "-U", "sa", "-P", "YourStrong!Passw0rd", "-Q", "SELECT @@VERSION" ]
+      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "sqlserver-popa", "-U", "sa", "-P", "${SA_PASSWORD}", "-Q", "SELECT @@VERSION" ]
       interval: 10s
       retries: 10
       start_period: 10s
 
   migration-runner:
     build:
-      context: .
+      context: ./Backend
       dockerfile: Dockerfile
     container_name: migration-runner
     depends_on:
       sqlserver-popa:
         condition: service_healthy
     volumes:
-      - ./migrations:/migrations
+      - ./Backend/migrations:/migrations
     entrypoint: >
       /bin/bash -c "
         echo 'Aguardando o banco de dados estar totalmente pronto...';
@@ -45,7 +45,7 @@ services:
             echo 'Iniciando a execução das migrations...';
             for file in \"$${migration_files[@]}\"; do
                 echo 'Executando migration: '$$file'';
-                /opt/mssql-tools/bin/sqlcmd -S sqlserver-popa -U sa -P 'YourStrong!Passw0rd' -i \"$$file\";
+                /opt/mssql-tools/bin/sqlcmd -S sqlserver-popa -U sa -P '${SA_PASSWORD}' -i \"$$file\";
             done;
             echo '✅ Todas as migrations foram executadas';
         fi
@@ -66,7 +66,7 @@ services:
 
   popadin-api:
     build:
-      context: .
+      context: ./Backend
       dockerfile: src/PopaDin.Bkd.Api/Dockerfile
     depends_on:
       sqlserver-popa:
@@ -78,6 +78,34 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:5285/
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+      - ConnectionStrings__Database=Server=sqlserver-popa,1433;Database=master;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - MongoDbSettings__ConnectionString=mongodb://mongodb-popa:27017
+      - MongoDbSettings__DatabaseName=popadin
+      - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
+      - ServiceBusSettings__QueueName=record-events
+      - AppSettings__Secret=${JWT_SECRET}
+    restart: unless-stopped
+
+  popadin-alert-service:
+    build:
+      context: ./PopaDin.AlertService
+      dockerfile: Dockerfile
+    container_name: popadin-alert-service
+    depends_on:
+      mongodb-popa:
+        condition: service_healthy
+    environment:
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+      - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
+      - ServiceBusSettings__QueueName=record-events
+      - MongoDbSettings__ConnectionString=mongodb://mongodb-popa:27017
+      - MongoDbSettings__DatabaseName=popadin
+      - SmtpSettings__Host=${SMTP_HOST}
+      - SmtpSettings__Port=${SMTP_PORT}
+      - SmtpSettings__Username=${SMTP_USERNAME}
+      - SmtpSettings__Password=${SMTP_PASSWORD}
+      - SmtpSettings__SenderEmail=${SMTP_SENDER_EMAIL}
+      - SmtpSettings__SenderName=PopaDin
     restart: unless-stopped
 
 volumes:
