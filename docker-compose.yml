@@ -100,6 +100,8 @@ services:
       - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
       - ServiceBusSettings__QueueName=record-events
       - ServiceBusSettings__ExportQueueName=pdf-relatorios
+      - BlobStorageSettings__ConnectionString=${BLOB_STORAGE_CONNECTION_STRING}
+      - BlobStorageSettings__ContainerName=pdf-exports
       - AppSettings__Secret=${JWT_SECRET}
     restart: unless-stopped
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Record;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Interfaces.Publishers;
+using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +14,10 @@ namespace PopaDin.Bkd.Api.Controllers;
 [Route("v1/[controller]")]
 [ApiController]
 [Authorize]
-public class RecordController(IRecordService recordService, IExportEventPublisher exportEventPublisher) : ControllerBase
+public class RecordController(
+    IRecordService recordService,
+    IExportEventPublisher exportEventPublisher,
+    IExportBlobRepository exportBlobRepository) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status201Created)]
@@ -82,5 +86,29 @@ public class RecordController(IRecordService recordService, IExportEventPublishe
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await exportEventPublisher.PublishExportRequestAsync(userId, exportRecordsRequest.StartDate, exportRecordsRequest.EndDate);
         return Accepted();
+    }
+
+    [HttpGet("export/files")]
+    [ProducesResponseType(typeof(List<ExportFileResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ExportFileResponse>>> ListExportFiles()
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var exports = await exportBlobRepository.ListExportsAsync(userId);
+        var response = exports.Adapt<List<ExportFileResponse>>();
+        return Ok(response);
+    }
+
+    [HttpGet("export/files/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DownloadExportFile([FromRoute] string fileName)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var stream = await exportBlobRepository.DownloadExportAsync(userId, fileName);
+
+        if (stream is null)
+            return NotFound();
+
+        return File(stream, "application/pdf", fileName);
     }
 }

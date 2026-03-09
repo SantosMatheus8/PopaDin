@@ -7,6 +7,7 @@ using PopaDin.Bkd.Service;
 using PopaDin.Bkd.Infra.Repositories;
 using PopaDin.Bkd.Infra.Publishers;
 using Azure.Messaging.ServiceBus;
+using Azure.Storage.Blobs;
 using MongoDB.Driver;
 using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Infra;
@@ -66,6 +67,17 @@ public static class ServiceModuleExtensions
             return client.CreateSender(queueName);
         });
 
+        // Azure Blob Storage
+        services.AddSingleton(sp =>
+        {
+            var connectionString = configuration["BlobStorageSettings:ConnectionString"];
+            var containerName = configuration["BlobStorageSettings:ContainerName"] ?? "pdf-exports";
+            var blobServiceClient = new BlobServiceClient(connectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            containerClient.CreateIfNotExists();
+            return containerClient;
+        });
+
         // Services
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IRecordService, RecordService>();
@@ -85,6 +97,7 @@ public static class ServiceModuleExtensions
         services.AddScoped<IUserCacheRepository, RedisUserCacheRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
+        services.AddScoped<IExportBlobRepository, BlobExportRepository>();
 
         // Infrastructure
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
