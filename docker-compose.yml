@@ -99,6 +99,7 @@ services:
       - RedisSettings__ConnectionString=redis-popa:6379
       - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
       - ServiceBusSettings__QueueName=record-events
+      - ServiceBusSettings__ExportQueueName=pdf-relatorios
       - AppSettings__Secret=${JWT_SECRET}
     restart: unless-stopped
 
@@ -122,6 +123,24 @@ services:
       - SmtpSettings__Password=${SMTP_PASSWORD}
       - SmtpSettings__SenderEmail=${SMTP_SENDER_EMAIL}
       - SmtpSettings__SenderName=PopaDin
+    restart: unless-stopped
+
+  popadin-export-service:
+    build:
+      context: ./PopaDin.ExportService
+      dockerfile: Dockerfile
+    container_name: popadin-export-service
+    depends_on:
+      mongodb-popa:
+        condition: service_healthy
+    environment:
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+      - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
+      - ServiceBusSettings__QueueName=pdf-relatorios
+      - MongoDbSettings__ConnectionString=mongodb://mongodb-popa:27017
+      - MongoDbSettings__DatabaseName=popadin
+      - BlobStorageSettings__ConnectionString=${BLOB_STORAGE_CONNECTION_STRING}
+      - BlobStorageSettings__ContainerName=pdf-exports
     restart: unless-stopped
 
 volumes:

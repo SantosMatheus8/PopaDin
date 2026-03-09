@@ -50,8 +50,14 @@ public static class ServiceModuleExtensions
         // Azure Service Bus
         services.AddSingleton(sp =>
         {
-            var connectionString = configuration["ServiceBusSettings:ConnectionString"];
-            return new ServiceBusClient(connectionString);
+            var rawConnectionString = configuration["ServiceBusSettings:ConnectionString"] ?? "";
+
+            var cleanedConnectionString = string.Join(";",
+                rawConnectionString.Split(';')
+                    .Where(part => !part.Trim().StartsWith("EntityPath=", StringComparison.OrdinalIgnoreCase))
+            );
+
+            return new ServiceBusClient(cleanedConnectionString);
         });
         services.AddSingleton(sp =>
         {
@@ -83,5 +89,6 @@ public static class ServiceModuleExtensions
         // Infrastructure
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IRecordEventPublisher, ServiceBusRecordEventPublisher>();
+        services.AddScoped<IExportEventPublisher, ServiceBusExportEventPublisher>();
     }
 }

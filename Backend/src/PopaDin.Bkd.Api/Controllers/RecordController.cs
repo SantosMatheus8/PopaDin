@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Record;
 using PopaDin.Bkd.Domain.Interfaces.Services;
+using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +13,7 @@ namespace PopaDin.Bkd.Api.Controllers;
 [Route("v1/[controller]")]
 [ApiController]
 [Authorize]
-public class RecordController(IRecordService recordService) : ControllerBase
+public class RecordController(IRecordService recordService, IExportEventPublisher exportEventPublisher) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status201Created)]
@@ -71,5 +72,15 @@ public class RecordController(IRecordService recordService) : ControllerBase
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await recordService.DeleteRecordAsync(recordId, userId);
         return NoContent();
+    }
+
+    [HttpPost("export")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> ExportRecords([FromBody] ExportRecordsRequest exportRecordsRequest)
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await exportEventPublisher.PublishExportRequestAsync(userId, exportRecordsRequest.StartDate, exportRecordsRequest.EndDate);
+        return Accepted();
     }
 }
