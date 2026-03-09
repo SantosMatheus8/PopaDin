@@ -122,6 +122,17 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
         return result.ToList();
     }
 
+    public async Task<List<Tag>> FindAllTagsByUserIdAsync(int userId)
+    {
+        logger.LogInformation("Buscando todas as Tags do usuário: {UserId}", userId);
+
+        using var connection = connectionFactory.CreateConnection();
+
+        var result = await connection.QueryAsync<Tag>(TagQueries.FindAllTagsByUserId, new { UserId = userId });
+
+        return result.ToList();
+    }
+
     public async Task<Tag> FindTagByIdAsync(int tagId, int userId)
     {
         logger.LogInformation("Buscando Tag: {TagId}", tagId);

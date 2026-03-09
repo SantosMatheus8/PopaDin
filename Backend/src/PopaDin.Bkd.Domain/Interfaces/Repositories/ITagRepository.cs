@@ -8,6 +8,7 @@ public interface ITagRepository
     Task<PaginatedResult<Tag>> GetTagsAsync(ListTags listTags);
     Task<Tag> FindTagByIdAsync(int tagId, int userId);
     Task<List<Tag>> FindTagsByIdsAsync(List<int> ids, int userId);
+    Task<List<Tag>> FindAllTagsByUserIdAsync(int userId);
     Task UpdateTagAsync(Tag tag);
     Task DeleteTagAsync(int tagId);
 }
