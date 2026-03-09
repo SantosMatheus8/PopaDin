@@ -10,6 +10,7 @@ public class RecordService(
     IRecordRepository repository,
     ITagRepository tagRepository,
     ITagCacheRepository tagCacheRepository,
+    IDashboardCacheRepository dashboardCacheRepository,
     IUserRepository userRepository,
     IRecordEventPublisher recordEventPublisher,
     ILogger<RecordService> logger) : IRecordService
@@ -32,6 +33,8 @@ public class RecordService(
         var user = await userRepository.FindUserByIdAsync(userId);
         await recordEventPublisher.PublishRecordCreatedAsync(
             userId, record.Value, record.Operation, user.Balance);
+
+        await dashboardCacheRepository.InvalidateAsync(userId);
 
         return recordCreated;
     }
@@ -68,6 +71,8 @@ public class RecordService(
 
         await userRepository.UpdateBalanceAsync(userId, netAmount);
 
+        await dashboardCacheRepository.InvalidateAsync(userId);
+
         return await FindRecordOrThrowAsync(recordId, userId);
     }
 
@@ -79,6 +84,8 @@ public class RecordService(
 
         var revertAmount = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
         await userRepository.UpdateBalanceAsync(userId, revertAmount);
+
+        await dashboardCacheRepository.InvalidateAsync(userId);
     }
 
     private async Task<List<Tag>> GetValidatedTagsAsync(List<int> tagIds, int userId)
