@@ -7,6 +7,7 @@ namespace PopaDin.Bkd.Service;
 
 public class UserService(
     IUserRepository repository,
+    IUserCacheRepository cacheRepository,
     IPasswordHasher passwordHasher,
     ILogger<UserService> logger) : IUserService
 {
@@ -36,7 +37,17 @@ public class UserService(
     {
         logger.LogInformation("Buscando um User");
         ValidateUserOwnership(userId, authenticatedUserId);
-        return await FindUserOrThrowAsync(userId);
+
+        var cached = await cacheRepository.GetAsync(userId);
+        if (cached != null)
+        {
+            logger.LogInformation("User encontrado no cache para o usuário {UserId}", userId);
+            return cached;
+        }
+
+        var user = await FindUserOrThrowAsync(userId);
+        await cacheRepository.SetAsync(userId, user);
+        return user;
     }
 
     public async Task<User> UpdateUserAsync(User updateUserRequest, int userId, int authenticatedUserId)
@@ -54,6 +65,7 @@ public class UserService(
         }
 
         await repository.UpdateUserAsync(user);
+        await cacheRepository.InvalidateAsync(userId);
 
         return await repository.FindUserByIdAsync(userId);
     }
@@ -63,6 +75,7 @@ public class UserService(
         ValidateUserOwnership(userId, authenticatedUserId);
         await FindUserOrThrowAsync(userId);
         await repository.DeleteUserAsync(userId);
+        await cacheRepository.InvalidateAsync(userId);
     }
 
     private void ValidateUserOwnership(int userId, int authenticatedUserId)

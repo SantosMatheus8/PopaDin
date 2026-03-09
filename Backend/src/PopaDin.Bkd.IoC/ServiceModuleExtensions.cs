@@ -76,6 +76,7 @@ public static class ServiceModuleExtensions
         services.AddScoped<ITagCacheRepository, RedisTagCacheRepository>();
         services.AddScoped<IDashboardRepository, MongoDashboardRepository>();
         services.AddScoped<IDashboardCacheRepository, RedisDashboardCacheRepository>();
+        services.AddScoped<IUserCacheRepository, RedisUserCacheRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
 
