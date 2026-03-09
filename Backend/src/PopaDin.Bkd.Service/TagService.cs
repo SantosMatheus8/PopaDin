@@ -5,13 +5,19 @@ using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Service;
 
-public class TagService(ITagRepository repository, ILogger<TagService> logger) : ITagService
+public class TagService(
+    ITagRepository repository,
+    ITagCacheRepository cacheRepository,
+    ILogger<TagService> logger) : ITagService
 {
     public async Task<Tag> CreateTagAsync(Tag tag, int userId)
     {
         logger.LogInformation("Criando Tag");
         tag.User = new User { Id = userId };
         var tagCreated = await repository.CreateTagAsync(tag);
+
+        await cacheRepository.InvalidateUserTagsAsync(userId);
+
         return await FindTagOrThrowAsync(tagCreated.Id!.Value, userId);
     }
 
@@ -25,6 +31,14 @@ public class TagService(ITagRepository repository, ILogger<TagService> logger) :
     public async Task<Tag> FindTagByIdAsync(int tagId, int userId)
     {
         logger.LogInformation("Buscando um Tag");
+
+        var cachedTags = await GetOrLoadUserTagsAsync(userId);
+        if (cachedTags != null)
+        {
+            var cachedTag = cachedTags.FirstOrDefault(t => t.Id == tagId);
+            if (cachedTag != null) return cachedTag;
+        }
+
         return await FindTagOrThrowAsync(tagId, userId);
     }
 
@@ -38,6 +52,8 @@ public class TagService(ITagRepository repository, ILogger<TagService> logger) :
         tag.Description = updateTagRequest.Description;
         await repository.UpdateTagAsync(tag);
 
+        await cacheRepository.InvalidateUserTagsAsync(userId);
+
         return await FindTagOrThrowAsync(tagId, userId);
     }
 
@@ -45,6 +61,19 @@ public class TagService(ITagRepository repository, ILogger<TagService> logger) :
     {
         await FindTagOrThrowAsync(tagId, userId);
         await repository.DeleteTagAsync(tagId);
+
+        await cacheRepository.InvalidateUserTagsAsync(userId);
+    }
+
+    private async Task<List<Tag>?> GetOrLoadUserTagsAsync(int userId)
+    {
+        var cachedTags = await cacheRepository.GetUserTagsAsync(userId);
+        if (cachedTags != null) return cachedTags;
+
+        var allTags = await repository.FindAllTagsByUserIdAsync(userId);
+        await cacheRepository.SetUserTagsAsync(userId, allTags);
+
+        return allTags;
     }
 
     private async Task<Tag> FindTagOrThrowAsync(int tagId, int userId)

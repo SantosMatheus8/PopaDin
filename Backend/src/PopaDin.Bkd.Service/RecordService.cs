@@ -9,6 +9,7 @@ namespace PopaDin.Bkd.Service;
 public class RecordService(
     IRecordRepository repository,
     ITagRepository tagRepository,
+    ITagCacheRepository tagCacheRepository,
     IUserRepository userRepository,
     IRecordEventPublisher recordEventPublisher,
     ILogger<RecordService> logger) : IRecordService
@@ -84,7 +85,9 @@ public class RecordService(
     {
         if (tagIds.Count == 0) return [];
 
-        var foundTags = await tagRepository.FindTagsByIdsAsync(tagIds, userId);
+        var allUserTags = await GetOrLoadUserTagsAsync(userId);
+        var tagIdSet = tagIds.ToHashSet();
+        var foundTags = allUserTags.Where(t => tagIdSet.Contains(t.Id!.Value)).ToList();
         var foundIds = foundTags.Select(t => t.Id!.Value).ToHashSet();
         var missingIds = tagIds.Where(id => !foundIds.Contains(id)).ToList();
 
@@ -92,6 +95,17 @@ public class RecordService(
             throw new NotFoundException($"As seguintes tags não existem: {string.Join(", ", missingIds)}");
 
         return foundTags;
+    }
+
+    private async Task<List<Tag>> GetOrLoadUserTagsAsync(int userId)
+    {
+        var cachedTags = await tagCacheRepository.GetUserTagsAsync(userId);
+        if (cachedTags != null) return cachedTags;
+
+        var allTags = await tagRepository.FindAllTagsByUserIdAsync(userId);
+        await tagCacheRepository.SetUserTagsAsync(userId, allTags);
+
+        return allTags;
     }
 
     private async Task<Record> FindRecordOrThrowAsync(string recordId, int userId)

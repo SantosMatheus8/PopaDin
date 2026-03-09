@@ -10,6 +10,7 @@ using Azure.Messaging.ServiceBus;
 using MongoDB.Driver;
 using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Infra;
+using StackExchange.Redis;
 
 namespace PopaDin.Bkd.Ioc;
 
@@ -39,6 +40,13 @@ public static class ServiceModuleExtensions
             return client.GetDatabase(databaseName);
         });
 
+        // Redis
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var connectionString = configuration["RedisSettings:ConnectionString"];
+            return ConnectionMultiplexer.Connect(connectionString!);
+        });
+
         // Azure Service Bus
         services.AddSingleton(sp =>
         {
@@ -64,6 +72,7 @@ public static class ServiceModuleExtensions
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<IRecordRepository, MongoRecordRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<ITagCacheRepository, RedisTagCacheRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
 

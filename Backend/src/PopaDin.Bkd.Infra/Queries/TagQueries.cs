@@ -48,6 +48,16 @@ public static class TagQueries
         FROM Tag t WITH(NOLOCK)
         WHERE t.Id IN @Ids AND t.UserId = @UserId";
 
+    public const string FindAllTagsByUserId = @"
+        SELECT t.Id,
+               t.Name,
+               t.TagType,
+               t.Description,
+               t.CreatedAt,
+               t.UpdatedAt
+        FROM Tag t WITH(NOLOCK)
+        WHERE t.UserId = @UserId";
+
     public const string FindTagById = @"
         SELECT
             t.Id,
