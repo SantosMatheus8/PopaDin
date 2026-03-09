@@ -39,10 +39,10 @@ public class RecordController(IRecordService recordService) : ControllerBase
         return Ok(recordsResponse);
     }
 
-    [HttpGet("{recordId:int}")]
+    [HttpGet("{recordId}")]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] int recordId)
+    public async Task<ActionResult<RecordResponse>> FindRecordById([FromRoute] string recordId)
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         Record record = await recordService.FindRecordByIdAsync(recordId, userId);
@@ -50,11 +50,11 @@ public class RecordController(IRecordService recordService) : ControllerBase
         return Ok(recordResponse);
     }
 
-    [HttpPut("{recordId:int}")]
+    [HttpPut("{recordId}")]
     [ProducesResponseType(typeof(RecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecordResponse>> UpdateRecord([FromBody] UpdateRecordRequest updateRecordRequest,
-        [FromRoute] int recordId)
+        [FromRoute] string recordId)
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = updateRecordRequest.Adapt<Record>();
@@ -63,10 +63,10 @@ public class RecordController(IRecordService recordService) : ControllerBase
         return Ok(recordResponse);
     }
 
-    [HttpDelete("{recordId:int}")]
+    [HttpDelete("{recordId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteRecord([FromRoute] int recordId)
+    public async Task<ActionResult> DeleteRecord([FromRoute] string recordId)
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         await recordService.DeleteRecordAsync(recordId, userId);

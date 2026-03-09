@@ -4,7 +4,7 @@ namespace PopaDin.Bkd.Api.Dtos.Record;
 
 public class RecordResponse
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = "";
     public OperationEnum Operation { get; set; }
     public decimal Value { get; set; }
     public FrequencyEnum Frequency { get; set; }
