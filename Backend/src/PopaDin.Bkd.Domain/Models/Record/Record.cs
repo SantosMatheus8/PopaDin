@@ -5,7 +5,7 @@ namespace PopaDin.Bkd.Domain.Models;
 
 public class Record
 {
-    public int? Id { get; set; }
+    public string? Id { get; set; }
     public OperationEnum Operation { get; set; }
     public decimal Value { get; set; }
     public FrequencyEnum Frequency { get; set; }

@@ -62,7 +62,7 @@ public static class ServiceModuleExtensions
 
         // Repositories
         services.AddScoped<IBudgetRepository, BudgetRepository>();
-        services.AddScoped<IRecordRepository, RecordRepository>();
+        services.AddScoped<IRecordRepository, MongoRecordRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
