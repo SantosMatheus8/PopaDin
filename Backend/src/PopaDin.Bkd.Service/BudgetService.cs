@@ -5,7 +5,10 @@ using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Service;
 
-public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> logger) : IBudgetService
+public class BudgetService(
+    IBudgetRepository repository,
+    IDashboardCacheRepository dashboardCacheRepository,
+    ILogger<BudgetService> logger) : IBudgetService
 {
     public async Task<Budget> CreateBudgetAsync(Budget budget, int userId)
     {
@@ -15,6 +18,8 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
 
         budget.User = new User { Id = userId };
         var budgetCreated = await repository.CreateBudgetAsync(budget);
+
+        await dashboardCacheRepository.InvalidateAsync(userId);
 
         return await FindBudgetOrThrowAsync(budgetCreated.Id!.Value, userId);
     }
@@ -44,6 +49,8 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
         budget.Goal = updateBudgetRequest.Goal;
         await repository.UpdateBudgetAsync(budget);
 
+        await dashboardCacheRepository.InvalidateAsync(userId);
+
         return await FindBudgetOrThrowAsync(budgetId, userId);
     }
 
@@ -51,12 +58,16 @@ public class BudgetService(IBudgetRepository repository, ILogger<BudgetService> 
     {
         await FindBudgetOrThrowAsync(budgetId, userId);
         await repository.DeleteBudgetAsync(budgetId);
+
+        await dashboardCacheRepository.InvalidateAsync(userId);
     }
 
     public async Task FinishBudgetAsync(int budgetId, int userId)
     {
         await FindBudgetOrThrowAsync(budgetId, userId);
         await repository.FinishBudgetAsync(budgetId);
+
+        await dashboardCacheRepository.InvalidateAsync(userId);
     }
 
     private async Task<Budget> FindBudgetOrThrowAsync(int budgetId, int userId)

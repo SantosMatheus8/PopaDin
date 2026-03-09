@@ -67,12 +67,15 @@ public static class ServiceModuleExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         // Repositories
         services.AddScoped<IBudgetRepository, BudgetRepository>();
         services.AddScoped<IRecordRepository, MongoRecordRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ITagCacheRepository, RedisTagCacheRepository>();
+        services.AddScoped<IDashboardRepository, MongoDashboardRepository>();
+        services.AddScoped<IDashboardCacheRepository, RedisDashboardCacheRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
 

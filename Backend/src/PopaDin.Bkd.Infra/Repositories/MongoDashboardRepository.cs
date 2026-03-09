@@ -1,0 +1,160 @@
+using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using PopaDin.Bkd.Domain.Enums;
+using PopaDin.Bkd.Domain.Interfaces.Repositories;
+using PopaDin.Bkd.Domain.Models;
+using PopaDin.Bkd.Infra.Documents;
+
+namespace PopaDin.Bkd.Infra.Repositories;
+
+public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDashboardRepository> logger)
+    : IDashboardRepository
+{
+    private IMongoCollection<RecordDocument> Collection =>
+        database.GetCollection<RecordDocument>("records");
+
+    public async Task<DashboardResult> GetDashboardDataAsync(int userId, DateTime startDate, DateTime endDate)
+    {
+        logger.LogInformation("Buscando dados do dashboard no MongoDB para o usuário {UserId}", userId);
+
+        var matchFilter = Builders<RecordDocument>.Filter.Eq(r => r.UserId, userId)
+                          & Builders<RecordDocument>.Filter.Gte(r => r.CreatedAt, startDate)
+                          & Builders<RecordDocument>.Filter.Lte(r => r.CreatedAt, endDate);
+
+        var pipeline = Collection.Aggregate()
+            .Match(matchFilter)
+            .Facet(
+                AggregateFacet.Create("summary",
+                    PipelineDefinition<RecordDocument, BsonDocument>.Create(
+                        new BsonDocument("$group", new BsonDocument
+                        {
+                            { "_id", BsonNull.Value },
+                            { "totalDeposits", new BsonDocument("$sum",
+                                new BsonDocument("$cond", new BsonArray
+                                {
+                                    new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Deposit }),
+                                    "$Value",
+                                    0
+                                }))
+                            },
+                            { "totalOutflows", new BsonDocument("$sum",
+                                new BsonDocument("$cond", new BsonArray
+                                {
+                                    new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Outflow }),
+                                    "$Value",
+                                    0
+                                }))
+                            },
+                            { "recordCount", new BsonDocument("$sum", 1) }
+                        })
+                    )
+                ),
+                AggregateFacet.Create("spendingByTag",
+                    PipelineDefinition<RecordDocument, BsonDocument>.Create(
+                        new BsonDocument("$match", new BsonDocument("Operation", (int)OperationEnum.Outflow)),
+                        new BsonDocument("$unwind", "$Tags"),
+                        new BsonDocument("$group", new BsonDocument
+                        {
+                            { "_id", new BsonDocument
+                                {
+                                    { "tagId", "$Tags.OriginalTagId" },
+                                    { "tagName", "$Tags.Name" }
+                                }
+                            },
+                            { "totalSpent", new BsonDocument("$sum", "$Value") }
+                        }),
+                        new BsonDocument("$sort", new BsonDocument("totalSpent", -1))
+                    )
+                ),
+                AggregateFacet.Create("latestRecords",
+                    PipelineDefinition<RecordDocument, BsonDocument>.Create(
+                        new BsonDocument("$sort", new BsonDocument("CreatedAt", -1)),
+                        new BsonDocument("$limit", 5)
+                    )
+                ),
+                AggregateFacet.Create("topDeposits",
+                    PipelineDefinition<RecordDocument, BsonDocument>.Create(
+                        new BsonDocument("$match", new BsonDocument("Operation", (int)OperationEnum.Deposit)),
+                        new BsonDocument("$sort", new BsonDocument("Value", -1)),
+                        new BsonDocument("$limit", 5)
+                    )
+                ),
+                AggregateFacet.Create("topOutflows",
+                    PipelineDefinition<RecordDocument, BsonDocument>.Create(
+                        new BsonDocument("$match", new BsonDocument("Operation", (int)OperationEnum.Outflow)),
+                        new BsonDocument("$sort", new BsonDocument("Value", -1)),
+                        new BsonDocument("$limit", 5)
+                    )
+                )
+            );
+
+        var facetResult = await pipeline.FirstOrDefaultAsync();
+
+        var result = new DashboardResult();
+
+        if (facetResult == null)
+            return result;
+
+        var summaryDocs = facetResult.Facets.First(f => f.Name == "summary").Output<BsonDocument>();
+        if (summaryDocs.Count > 0)
+        {
+            var s = summaryDocs[0];
+            result.Summary = new DashboardSummary
+            {
+                TotalDeposits = s["totalDeposits"].IsDecimal128 ? (decimal)s["totalDeposits"].AsDecimal128 : Convert.ToDecimal(s["totalDeposits"].ToDouble()),
+                TotalOutflows = s["totalOutflows"].IsDecimal128 ? (decimal)s["totalOutflows"].AsDecimal128 : Convert.ToDecimal(s["totalOutflows"].ToDouble()),
+                RecordCount = s["recordCount"].AsInt32
+            };
+            result.Summary.Balance = result.Summary.TotalDeposits - result.Summary.TotalOutflows;
+        }
+
+        var spendingDocs = facetResult.Facets.First(f => f.Name == "spendingByTag").Output<BsonDocument>();
+        result.SpendingByTag = spendingDocs.Select(d => new DashboardSpendingByTag
+        {
+            TagId = d["_id"]["tagId"].AsInt32,
+            TagName = d["_id"]["tagName"].AsString,
+            TotalSpent = d["totalSpent"].IsDecimal128 ? (decimal)d["totalSpent"].AsDecimal128 : Convert.ToDecimal(d["totalSpent"].ToDouble())
+        }).ToList();
+
+        var latestDocs = facetResult.Facets.First(f => f.Name == "latestRecords").Output<BsonDocument>();
+        result.LatestRecords = latestDocs.Select(MapBsonToRecord).ToList();
+
+        var topDepositDocs = facetResult.Facets.First(f => f.Name == "topDeposits").Output<BsonDocument>();
+        result.TopDeposits = topDepositDocs.Select(MapBsonToRecord).ToList();
+
+        var topOutflowDocs = facetResult.Facets.First(f => f.Name == "topOutflows").Output<BsonDocument>();
+        result.TopOutflows = topOutflowDocs.Select(MapBsonToRecord).ToList();
+
+        return result;
+    }
+
+    private static Record MapBsonToRecord(BsonDocument doc)
+    {
+        return new Record
+        {
+            Id = doc["_id"].AsObjectId.ToString(),
+            Operation = (OperationEnum)doc["Operation"].AsInt32,
+            Value = doc["Value"].IsDecimal128 ? (decimal)doc["Value"].AsDecimal128 : Convert.ToDecimal(doc["Value"].ToDouble()),
+            Frequency = (FrequencyEnum)doc["Frequency"].AsInt32,
+            Tags = doc.Contains("Tags") ? doc["Tags"].AsBsonArray.Select(t =>
+            {
+                var tagDoc = t.AsBsonDocument;
+                return new Domain.Models.Tag
+                {
+                    Id = tagDoc["OriginalTagId"].AsInt32,
+                    Name = tagDoc["Name"].AsString,
+                    TagType = tagDoc.Contains("TagType") && !tagDoc["TagType"].IsBsonNull
+                        ? (OperationEnum)tagDoc["TagType"].AsInt32
+                        : null,
+                    Description = tagDoc.Contains("Description") && !tagDoc["Description"].IsBsonNull
+                        ? tagDoc["Description"].AsString
+                        : null
+                };
+            }).ToList() : [],
+            User = new User { Id = doc["UserId"].AsInt32 },
+            CreatedAt = doc["CreatedAt"].ToUniversalTime(),
+            UpdatedAt = doc["UpdatedAt"].ToUniversalTime()
+        };
+    }
+}
