@@ -1,4 +1,4 @@
-import { AlertType, FrequencyEnum, OperationEnum, OrderDirection } from "./enums";
+import { FrequencyEnum, OperationEnum, OrderDirection } from "./enums";
 
 // --- Pagination ---
 export interface PaginatedResult<T> {
@@ -182,7 +182,7 @@ export interface ListBudgetsRequest extends PaginationParams {
 export interface AlertResponse {
   id: string;
   userId: number;
-  type: string;
+  type: number;
   threshold: number;
   channel: string;
   active: boolean;
@@ -190,7 +190,7 @@ export interface AlertResponse {
 }
 
 export interface CreateAlertRequest {
-  type: AlertType;
+  type: number;
   threshold: number;
 }
 

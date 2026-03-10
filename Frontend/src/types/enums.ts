@@ -13,8 +13,8 @@ export enum FrequencyEnum {
 }
 
 export enum AlertType {
-  BALANCE_BELOW = "BALANCE_BELOW",
-  BUDGET_ABOVE = "BUDGET_ABOVE",
+  BALANCE_BELOW = 0,
+  BUDGET_ABOVE = 1,
 }
 
 export enum OrderDirection {

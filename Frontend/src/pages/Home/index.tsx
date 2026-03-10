@@ -58,13 +58,13 @@ export default function HomePage() {
       <div className="rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 p-8 text-white shadow-lg">
         <div className="flex items-center gap-4">
           <div className="rounded-xl bg-white/20 p-3">
-            <Wallet className="h-8 w-8" />
+            <Wallet className="h-8 w-8 text-black/80" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-3xl font-bold text-black/80">
               Bem-vindo ao PopaDin{user?.name ? `, ${user.name}` : ""}!
             </h1>
-            <p className="mt-1 text-lg text-white/80">
+            <p className="mt-1 text-lg text-black/80">
               Seu gerenciador financeiro pessoal. Controle suas finanças de forma simples e eficiente.
             </p>
           </div>

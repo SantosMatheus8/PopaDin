@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tagSchema, type TagFormData } from "../../schemas/tag";
@@ -26,10 +27,18 @@ export function TagForm({ isOpen, onClose, onSubmit, tag, isLoading }: TagFormPr
     watch,
   } = useForm<TagFormData>({
     resolver: zodResolver(tagSchema),
-    defaultValues: tag
-      ? { name: tag.name, tagType: tag.tagType, description: tag.description, color: tag.color }
-      : { name: "", tagType: null, description: "", color: null },
+    defaultValues: { name: "", tagType: null, description: "", color: null },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (tag) {
+        reset({ name: tag.name, tagType: tag.tagType, description: tag.description, color: tag.color });
+      } else {
+        reset({ name: "", tagType: null, description: "", color: null });
+      }
+    }
+  }, [isOpen, tag, reset]);
 
   const colorValue = watch("color");
 

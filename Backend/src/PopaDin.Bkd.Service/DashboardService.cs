@@ -8,6 +8,7 @@ public class DashboardService(
     IDashboardRepository dashboardRepository,
     IDashboardCacheRepository cacheRepository,
     IBudgetRepository budgetRepository,
+    IUserRepository userRepository,
     ILogger<DashboardService> logger) : IDashboardService
 {
     public async Task<DashboardResult> GetDashboardAsync(int userId, DateTime? startDate, DateTime? endDate)
@@ -33,11 +34,15 @@ public class DashboardService(
             Page = 1,
             ItemsPerPage = 100
         });
+        var userTask = userRepository.FindUserByIdAsync(userId);
 
-        await Task.WhenAll(dashboardTask, budgetsTask);
+        await Task.WhenAll(dashboardTask, budgetsTask, userTask);
 
         var dashboard = dashboardTask.Result;
         var budgets = budgetsTask.Result;
+        var user = userTask.Result;
+
+        dashboard.Summary.Balance = user.Balance;
 
         dashboard.Budgets = budgets.Lines
             .Where(b => b.FinishAt == null)

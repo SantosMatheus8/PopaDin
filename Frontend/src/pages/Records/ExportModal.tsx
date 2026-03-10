@@ -13,6 +13,9 @@ interface ExportModalProps {
 }
 
 export function ExportModal({ isOpen, onClose, onSubmit, isLoading }: ExportModalProps) {
+  const today = new Date().toISOString().slice(0, 10);
+  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+
   const {
     register,
     handleSubmit,
@@ -20,6 +23,7 @@ export function ExportModal({ isOpen, onClose, onSubmit, isLoading }: ExportModa
     reset,
   } = useForm<ExportRecordsFormData>({
     resolver: zodResolver(exportRecordsSchema),
+    defaultValues: { startDate: firstDayOfMonth, endDate: today },
   });
 
   const handleFormSubmit = async (data: ExportRecordsFormData) => {

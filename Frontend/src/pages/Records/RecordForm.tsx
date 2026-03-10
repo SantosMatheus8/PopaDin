@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,8 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
     enabled: isOpen,
   });
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const {
     register,
     handleSubmit,
@@ -34,17 +37,25 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
     setValue,
   } = useForm<RecordFormData>({
     resolver: zodResolver(recordSchema),
-    defaultValues: record
-      ? {
+    defaultValues: { name: "", operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [], referenceDate: today },
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (record) {
+        reset({
           name: record.name,
           operation: record.operation,
           value: record.value,
           frequency: record.frequency,
           tagIds: record.tags.map((t) => t.id).filter((id): id is number => id !== null),
-          referenceDate: record.referenceDate ? record.referenceDate.slice(0, 10) : "",
-        }
-      : { name: "", operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [], referenceDate: "" },
-  });
+          referenceDate: record.referenceDate ? record.referenceDate.slice(0, 10) : today,
+        });
+      } else {
+        reset({ name: "", operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [], referenceDate: today });
+      }
+    }
+  }, [isOpen, record, reset, today]);
 
   const selectedTags = watch("tagIds");
   const tags = tagsData?.lines ?? [];

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { budgetSchema, type BudgetFormData } from "../../schemas/budget";
@@ -22,10 +23,18 @@ export function BudgetForm({ isOpen, onClose, onSubmit, budget, isLoading }: Bud
     reset,
   } = useForm<BudgetFormData>({
     resolver: zodResolver(budgetSchema),
-    defaultValues: budget
-      ? { name: budget.name, goal: budget.goal }
-      : { name: "", goal: 0 },
+    defaultValues: { name: "", goal: 0 },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (budget) {
+        reset({ name: budget.name, goal: budget.goal });
+      } else {
+        reset({ name: "", goal: 0 });
+      }
+    }
+  }, [isOpen, budget, reset]);
 
   const handleFormSubmit = async (data: BudgetFormData) => {
     await onSubmit(data);

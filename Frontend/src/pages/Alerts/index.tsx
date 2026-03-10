@@ -91,7 +91,7 @@ export default function AlertsPage() {
                     {alert.active ? "Ativo" : "Inativo"}
                   </Badge>
                   <p className="text-sm font-medium text-gray-900">
-                    {AlertTypeLabels[alert.type as AlertType] || alert.type}
+                    {AlertTypeLabels[alert.type as AlertType] || `Tipo ${alert.type}`}
                   </p>
                   <p className="text-lg font-bold text-primary-700">
                     {formatCurrency(alert.threshold)}

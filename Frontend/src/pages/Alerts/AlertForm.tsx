@@ -32,7 +32,7 @@ export function AlertForm({ isOpen, onClose, onSubmit, isLoading }: AlertFormPro
   };
 
   const typeOptions = Object.entries(AlertTypeLabels).map(([value, label]) => ({
-    value,
+    value: Number(value),
     label,
   }));
 
@@ -43,7 +43,7 @@ export function AlertForm({ isOpen, onClose, onSubmit, isLoading }: AlertFormPro
           label="Tipo"
           options={typeOptions}
           error={errors.type?.message}
-          {...register("type")}
+          {...register("type", { valueAsNumber: true })}
         />
         <Input
           label="Valor Limite (R$)"
