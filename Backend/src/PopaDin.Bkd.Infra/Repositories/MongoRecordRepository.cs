@@ -113,11 +113,11 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         var fieldName = listRecords.OrderBy switch
         {
             RecordOrderBy.Id => "Id",
-            RecordOrderBy.CreatedAt => "CreatedAt",
+            RecordOrderBy.CreatedAt => "ReferenceDate",
             RecordOrderBy.Frequency => "Frequency",
             RecordOrderBy.Value => "Value",
             RecordOrderBy.Operation => "Operation",
-            _ => "CreatedAt"
+            _ => "ReferenceDate"
         };
 
         return listRecords.OrderDirection == OrderDirection.ASC
@@ -130,6 +130,7 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         return new RecordDocument
         {
             Id = record.Id,
+            Name = record.Name,
             UserId = record.User.Id,
             Operation = (int)record.Operation,
             Value = record.Value,
@@ -139,8 +140,10 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
                 OriginalTagId = t.Id!.Value,
                 Name = t.Name,
                 TagType = t.TagType.HasValue ? (int)t.TagType.Value : null,
-                Description = t.Description
+                Description = t.Description,
+                Color = t.Color
             }).ToList(),
+            ReferenceDate = record.ReferenceDate ?? DateTime.UtcNow,
             CreatedAt = record.CreatedAt ?? DateTime.UtcNow,
             UpdatedAt = record.UpdatedAt ?? DateTime.UtcNow
         };
@@ -151,6 +154,7 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         return new Record
         {
             Id = document.Id,
+            Name = document.Name,
             Operation = (OperationEnum)document.Operation,
             Value = document.Value,
             Frequency = (FrequencyEnum)document.Frequency,
@@ -159,9 +163,11 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
                 Id = t.OriginalTagId,
                 Name = t.Name,
                 TagType = t.TagType.HasValue ? (OperationEnum)t.TagType.Value : null,
-                Description = t.Description
+                Description = t.Description,
+                Color = t.Color
             }).ToList(),
             User = new User { Id = document.UserId },
+            ReferenceDate = document.ReferenceDate,
             CreatedAt = document.CreatedAt,
             UpdatedAt = document.UpdatedAt
         };

@@ -22,7 +22,7 @@ export function AlertForm({ isOpen, onClose, onSubmit, isLoading }: AlertFormPro
     reset,
   } = useForm<AlertFormData>({
     resolver: zodResolver(alertSchema),
-    defaultValues: { type: AlertType.BALANCE_BELOW, channel: "email" },
+    defaultValues: { type: AlertType.BALANCE_BELOW },
   });
 
   const handleFormSubmit = async (data: AlertFormData) => {
@@ -46,18 +46,12 @@ export function AlertForm({ isOpen, onClose, onSubmit, isLoading }: AlertFormPro
           {...register("type")}
         />
         <Input
-          label="Threshold (R$)"
+          label="Valor Limite (R$)"
           type="number"
           step="0.01"
           placeholder="0.00"
           error={errors.threshold?.message}
           {...register("threshold", { valueAsNumber: true })}
-        />
-        <Input
-          label="Canal"
-          placeholder="email"
-          error={errors.channel?.message}
-          {...register("channel")}
         />
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>

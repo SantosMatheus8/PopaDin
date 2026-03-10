@@ -13,6 +13,7 @@ CREATE TABLE Tag (
     Name NVARCHAR(255) NOT NULL,
     Description NVARCHAR(MAX),
     TagType INT,
+    Color NVARCHAR(7) NULL,
     UserId INT NULL,
     CreatedAt DATETIME2 NOT NULL,
     UpdatedAt DATETIME2 NOT NULL,
@@ -30,22 +31,3 @@ CREATE TABLE Budget (
     CONSTRAINT FK_Budget_User FOREIGN KEY (UserId) REFERENCES [User](Id) ON DELETE CASCADE
 );
 
--- CREATE TABLE Record (
---     Id INT IDENTITY(1,1) PRIMARY KEY,
---     Operation INT NOT NULL,
---     Value DECIMAL(18, 2) NOT NULL,
---     Frequency INT NOT NULL,
---     UserId INT NOT NULL,
---     CreatedAt DATETIME2 NOT NULL,
---     UpdatedAt DATETIME2 NOT NULL,
---     CONSTRAINT FK_Record_User FOREIGN KEY (UserId) REFERENCES [User](Id) ON DELETE CASCADE
--- );
-
--- CREATE TABLE RecordTag (
---     Id INT IDENTITY(1,1),
---     RecordId INT NOT NULL,
---     TagId INT NOT NULL,
---     PRIMARY KEY (RecordId, TagId),
---     CONSTRAINT FK_RecordTag_Record FOREIGN KEY (RecordId) REFERENCES Record(Id) ON DELETE NO ACTION,
---     CONSTRAINT FK_RecordTag_Tag FOREIGN KEY (TagId) REFERENCES Tag(Id) ON DELETE NO ACTION
--- );

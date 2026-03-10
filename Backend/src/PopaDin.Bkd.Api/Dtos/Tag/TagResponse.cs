@@ -8,6 +8,7 @@ public class TagResponse
     public string Name { get; set; } = "";
     public OperationEnum? TagType { get; set; }
     public string? Description { get; set; }
+    public string? Color { get; set; }
     public int UserId { get; set; }
     public DateTime? CreatedAt { get; set; }
 }

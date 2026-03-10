@@ -40,12 +40,12 @@ public class DashboardService(
         var budgets = budgetsTask.Result;
 
         dashboard.Budgets = budgets.Lines
-            .Where(b => b.FinishAt == null || b.FinishAt >= resolvedStart)
+            .Where(b => b.FinishAt == null)
             .Select(b =>
             {
-                var totalSpent = dashboard.Summary.TotalOutflows;
-                var usedPercentage = b.Goal > 0 ? Math.Round(totalSpent / b.Goal * 100, 2) : 0;
-                var status = usedPercentage > 100 ? "exceeded"
+                var currentBalance = dashboard.Summary.Balance;
+                var usedPercentage = b.Goal > 0 ? Math.Round(currentBalance / b.Goal * 100, 2) : 0;
+                var status = usedPercentage >= 100 ? "exceeded"
                     : usedPercentage >= 80 ? "alert"
                     : "ok";
 
@@ -54,7 +54,7 @@ public class DashboardService(
                     Id = b.Id!.Value,
                     Name = b.Name,
                     Goal = b.Goal,
-                    TotalSpent = totalSpent,
+                    TotalSpent = currentBalance,
                     UsedPercentage = usedPercentage,
                     Status = status
                 };

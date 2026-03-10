@@ -36,12 +36,14 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
     resolver: zodResolver(recordSchema),
     defaultValues: record
       ? {
+          name: record.name,
           operation: record.operation,
           value: record.value,
           frequency: record.frequency,
           tagIds: record.tags.map((t) => t.id).filter((id): id is number => id !== null),
+          referenceDate: record.referenceDate ? record.referenceDate.slice(0, 10) : "",
         }
-      : { operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [] },
+      : { name: "", operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [], referenceDate: "" },
   });
 
   const selectedTags = watch("tagIds");
@@ -57,7 +59,11 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
   };
 
   const handleFormSubmit = async (data: RecordFormData) => {
-    await onSubmit(data);
+    const submitData = {
+      ...data,
+      referenceDate: data.referenceDate || undefined,
+    };
+    await onSubmit(submitData);
     reset();
     onClose();
   };
@@ -79,6 +85,12 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
       title={record ? "Editar Registro" : "Novo Registro"}
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <Input
+          label="Nome"
+          placeholder="Nome do registro"
+          error={errors.name?.message}
+          {...register("name")}
+        />
         <Select
           label="Tipo"
           options={operationOptions}
@@ -99,6 +111,12 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
           error={errors.frequency?.message}
           {...register("frequency", { valueAsNumber: true })}
         />
+        <Input
+          label="Data de Referência"
+          type="date"
+          error={errors.referenceDate?.message}
+          {...register("referenceDate")}
+        />
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Tags</label>
@@ -113,6 +131,13 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
                     ? "bg-primary-500 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
+                style={
+                  tag.color && !selectedTags?.includes(tag.id!)
+                    ? { backgroundColor: tag.color + "20", color: tag.color, borderColor: tag.color, borderWidth: 1 }
+                    : tag.color && selectedTags?.includes(tag.id!)
+                    ? { backgroundColor: tag.color, color: "#fff" }
+                    : undefined
+                }
               >
                 {tag.name}
               </button>

@@ -1,6 +1,7 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import {
+  Home,
   LayoutDashboard,
   Receipt,
   Tags,
@@ -12,7 +13,8 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/", label: "Início", icon: Home },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/records", label: "Registros", icon: Receipt },
   { to: "/tags", label: "Tags", icon: Tags },
   { to: "/budgets", label: "Orçamentos", icon: Wallet },
@@ -25,10 +27,10 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col bg-secondary-900 text-white">
-      <div className="flex h-16 items-center gap-2 px-6">
+      <Link to="/" className="flex h-16 items-center gap-2 px-6 transition-opacity hover:opacity-80">
         <Wallet className="h-7 w-7 text-tertiary-500" />
         <span className="text-xl font-bold tracking-wide">PopaDin</span>
-      </div>
+      </Link>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => (

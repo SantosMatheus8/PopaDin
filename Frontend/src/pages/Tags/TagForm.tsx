@@ -23,12 +23,15 @@ export function TagForm({ isOpen, onClose, onSubmit, tag, isLoading }: TagFormPr
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<TagFormData>({
     resolver: zodResolver(tagSchema),
     defaultValues: tag
-      ? { name: tag.name, tagType: tag.tagType, description: tag.description }
-      : { name: "", tagType: null, description: "" },
+      ? { name: tag.name, tagType: tag.tagType, description: tag.description, color: tag.color }
+      : { name: "", tagType: null, description: "", color: null },
   });
+
+  const colorValue = watch("color");
 
   const handleFormSubmit = async (data: TagFormData) => {
     await onSubmit(data);
@@ -65,6 +68,20 @@ export function TagForm({ isOpen, onClose, onSubmit, tag, isLoading }: TagFormPr
           error={errors.description?.message}
           {...register("description")}
         />
+        <div className="w-full space-y-2">
+          <label className="block text-sm font-medium">Cor</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              className="h-10 w-14 cursor-pointer rounded border border-gray-300 p-1"
+              {...register("color")}
+            />
+            <span className="text-sm text-gray-500">
+              {colorValue || "Nenhuma cor selecionada"}
+            </span>
+          </div>
+          {errors.color?.message && <p className="text-sm text-red-500">{errors.color.message}</p>}
+        </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar

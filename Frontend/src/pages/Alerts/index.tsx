@@ -96,7 +96,6 @@ export default function AlertsPage() {
                   <p className="text-lg font-bold text-primary-700">
                     {formatCurrency(alert.threshold)}
                   </p>
-                  <p className="text-xs text-gray-400">Canal: {alert.channel}</p>
                 </div>
                 <div className="flex gap-1">
                   <button

@@ -6,5 +6,4 @@ public class CreateAlertRequest
 {
     public AlertType Type { get; set; }
     public decimal Threshold { get; set; }
-    public string Channel { get; set; } = "";
 }

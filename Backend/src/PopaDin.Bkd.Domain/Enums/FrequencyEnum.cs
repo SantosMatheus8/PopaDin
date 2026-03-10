@@ -6,5 +6,6 @@ public enum FrequencyEnum
     Bimonthly = 1,
     Quarterly = 2,
     Semiannual = 3,
-    Annual = 4
+    Annual = 4,
+    OneTime = 5
 }

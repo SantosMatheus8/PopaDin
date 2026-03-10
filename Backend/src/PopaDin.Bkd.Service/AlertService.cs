@@ -6,7 +6,7 @@ using PopaDin.Bkd.Domain.Models;
 
 namespace PopaDin.Bkd.Service;
 
-public class AlertService(IAlertRepository repository, ILogger<AlertService> logger) : IAlertService
+public class AlertService(IAlertRepository repository, IUserRepository userRepository, ILogger<AlertService> logger) : IAlertService
 {
     public async Task<Alert> CreateAlertAsync(Alert alert, int userId)
     {
@@ -14,7 +14,9 @@ public class AlertService(IAlertRepository repository, ILogger<AlertService> log
 
         alert.ValidateThreshold();
 
+        var user = await userRepository.FindUserByIdAsync(userId);
         alert.User = new User { Id = userId };
+        alert.Channel = user.Email;
         alert.Active = true;
 
         return await repository.CreateAlertAsync(alert);

@@ -9,6 +9,7 @@ export enum FrequencyEnum {
   Quarterly = 2,
   Semiannual = 3,
   Annual = 4,
+  OneTime = 5,
 }
 
 export enum AlertType {
@@ -32,6 +33,7 @@ export const FrequencyLabels: Record<FrequencyEnum, string> = {
   [FrequencyEnum.Quarterly]: "Trimestral",
   [FrequencyEnum.Semiannual]: "Semestral",
   [FrequencyEnum.Annual]: "Anual",
+  [FrequencyEnum.OneTime]: "Registro Único",
 };
 
 export const AlertTypeLabels: Record<AlertType, string> = {

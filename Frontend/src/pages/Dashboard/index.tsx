@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -12,10 +13,39 @@ import { EmptyState } from "../../components/EmptyState";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { OperationLabels, FrequencyLabels, OperationEnum } from "../../types/enums";
 
+function getMonthOptions() {
+  const options: { value: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+  }
+  return options;
+}
+
+function parsePeriod(period: string) {
+  const [year, month] = period.split("-").map(Number);
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  return {
+    startDate: startDate.toISOString().slice(0, 10),
+    endDate: endDate.toISOString().slice(0, 10),
+  };
+}
+
 export default function DashboardPage() {
+  const now = new Date();
+  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [selectedPeriod, setSelectedPeriod] = useState(currentPeriod);
+  const monthOptions = getMonthOptions();
+
+  const { startDate, endDate } = parsePeriod(selectedPeriod);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => dashboardService.get(),
+    queryKey: ["dashboard", selectedPeriod],
+    queryFn: () => dashboardService.get({ startDate, endDate }),
   });
 
   if (isLoading) {
@@ -30,9 +60,24 @@ export default function DashboardPage() {
 
   const { summary, budgets, spendingByTag, latestRecords } = data;
 
+  const activeBudgets = budgets.filter((b) => b.status !== undefined);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <select
+          value={selectedPeriod}
+          onChange={(e) => setSelectedPeriod(e.target.value)}
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        >
+          {monthOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -95,11 +140,11 @@ export default function DashboardPage() {
         {/* Budgets */}
         <Card>
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Orçamentos</h2>
-          {budgets.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum orçamento cadastrado.</p>
+          {activeBudgets.length === 0 ? (
+            <p className="text-sm text-gray-400">Nenhum orçamento ativo.</p>
           ) : (
             <div className="space-y-3">
-              {budgets.map((budget) => (
+              {activeBudgets.map((budget) => (
                 <div key={budget.id} className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">{budget.name}</span>
@@ -167,6 +212,7 @@ export default function DashboardPage() {
               <thead>
                 <tr className="border-b text-gray-500">
                   <th className="pb-2 font-medium">Data</th>
+                  <th className="pb-2 font-medium">Nome</th>
                   <th className="pb-2 font-medium">Tipo</th>
                   <th className="pb-2 font-medium">Valor</th>
                   <th className="pb-2 font-medium">Frequência</th>
@@ -176,7 +222,8 @@ export default function DashboardPage() {
               <tbody>
                 {latestRecords.map((record) => (
                   <tr key={record.id} className="border-b last:border-0">
-                    <td className="py-3 text-gray-600">{formatDate(record.createdAt)}</td>
+                    <td className="py-3 text-gray-600">{formatDate(record.referenceDate)}</td>
+                    <td className="py-3 font-medium text-gray-900">{record.name || "-"}</td>
                     <td className="py-3">
                       <Badge variant={record.operation === OperationEnum.Deposit ? "success" : "error"}>
                         {OperationLabels[record.operation]}

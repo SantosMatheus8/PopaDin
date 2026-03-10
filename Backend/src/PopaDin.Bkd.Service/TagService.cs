@@ -50,6 +50,7 @@ public class TagService(
         tag.Name = updateTagRequest.Name;
         tag.TagType = updateTagRequest.TagType;
         tag.Description = updateTagRequest.Description;
+        tag.Color = updateTagRequest.Color;
         await repository.UpdateTagAsync(tag);
 
         await cacheRepository.InvalidateUserTagsAsync(userId);

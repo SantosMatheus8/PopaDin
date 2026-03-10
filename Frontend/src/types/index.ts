@@ -64,6 +64,7 @@ export interface TagResponse {
   name: string;
   tagType: OperationEnum | null;
   description: string | null;
+  color: string | null;
   userId: number;
   createdAt: string | null;
 }
@@ -72,12 +73,14 @@ export interface CreateTagRequest {
   name: string;
   tagType?: OperationEnum | null;
   description?: string | null;
+  color?: string | null;
 }
 
 export interface UpdateTagRequest {
   name: string;
   tagType?: OperationEnum | null;
   description?: string | null;
+  color?: string | null;
 }
 
 export interface ListTagsRequest extends PaginationParams {
@@ -93,31 +96,38 @@ export interface RecordTagResponse {
   id: number | null;
   name: string;
   tagType: OperationEnum | null;
+  color: string | null;
 }
 
 export interface RecordResponse {
   id: string;
+  name: string;
   operation: OperationEnum;
   value: number;
   frequency: FrequencyEnum;
   userId: number;
+  referenceDate: string;
   createdAt: string;
   updatedAt: string;
   tags: RecordTagResponse[];
 }
 
 export interface CreateRecordRequest {
+  name: string;
   operation: OperationEnum;
   value: number;
   frequency: FrequencyEnum;
   tagIds: number[];
+  referenceDate?: string;
 }
 
 export interface UpdateRecordRequest {
+  name: string;
   operation: OperationEnum;
   value: number;
   frequency: FrequencyEnum;
   tagIds: number[];
+  referenceDate?: string;
 }
 
 export interface ListRecordsRequest extends PaginationParams {
@@ -182,7 +192,6 @@ export interface AlertResponse {
 export interface CreateAlertRequest {
   type: AlertType;
   threshold: number;
-  channel: string;
 }
 
 export interface ToggleAlertRequest {

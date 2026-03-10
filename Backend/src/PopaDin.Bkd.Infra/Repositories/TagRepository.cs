@@ -24,6 +24,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
                 Name = tag.Name,
                 TagType = tag.TagType,
                 Description = tag.Description,
+                Color = tag.Color,
                 UserId = tag.User.Id,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -168,6 +169,7 @@ public class TagRepository(IDbConnectionFactory connectionFactory, ILogger<TagRe
                     Name = tag.Name,
                     TagType = tag.TagType,
                     Description = tag.Description,
+                    Color = tag.Color,
                     UpdatedAt = DateTime.UtcNow
                 }, transaction);
             transaction.Commit();

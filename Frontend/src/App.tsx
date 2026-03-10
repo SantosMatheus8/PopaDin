@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
+import HomePage from "./pages/Home";
 import DashboardPage from "./pages/Dashboard";
 import RecordsPage from "./pages/Records";
 import TagsPage from "./pages/Tags";
@@ -26,7 +27,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/records" element={<RecordsPage />} />
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/budgets" element={<BudgetsPage />} />
@@ -35,7 +37,7 @@ function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Toaster position="top-right" />
+        <Toaster position="bottom-right" />
       </AuthProvider>
     </BrowserRouter>
   );

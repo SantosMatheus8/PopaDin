@@ -16,6 +16,6 @@ public class Alert
     public void ValidateThreshold()
     {
         if (Threshold <= 0)
-            throw new UnprocessableEntityException("O threshold deve ser maior que zero.");
+            throw new UnprocessableEntityException("O valor limite deve ser maior que zero.");
     }
 }

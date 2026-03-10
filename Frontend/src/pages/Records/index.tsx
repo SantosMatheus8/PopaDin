@@ -142,6 +142,7 @@ export default function RecordsPage() {
               <thead>
                 <tr className="border-b bg-gray-50 text-gray-500">
                   <th className="px-6 py-3 font-medium">Data</th>
+                  <th className="px-6 py-3 font-medium">Nome</th>
                   <th className="px-6 py-3 font-medium">Tipo</th>
                   <th className="px-6 py-3 font-medium">Valor</th>
                   <th className="px-6 py-3 font-medium">Frequência</th>
@@ -152,7 +153,8 @@ export default function RecordsPage() {
               <tbody>
                 {records.map((record) => (
                   <tr key={record.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-600">{formatDate(record.createdAt)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(record.referenceDate)}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{record.name || "-"}</td>
                     <td className="px-6 py-4">
                       <Badge variant={record.operation === OperationEnum.Deposit ? "success" : "error"}>
                         {OperationLabels[record.operation]}
@@ -165,7 +167,13 @@ export default function RecordsPage() {
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
                         {record.tags.map((tag) => (
-                          <Badge key={tag.id} variant="info">{tag.name}</Badge>
+                          <Badge
+                            key={tag.id}
+                            variant="info"
+                            style={tag.color ? { backgroundColor: tag.color + "20", color: tag.color } : undefined}
+                          >
+                            {tag.name}
+                          </Badge>
                         ))}
                       </div>
                     </td>

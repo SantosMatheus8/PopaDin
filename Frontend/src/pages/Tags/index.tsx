@@ -101,6 +101,7 @@ export default function TagsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b bg-gray-50 text-gray-500">
+                  <th className="px-6 py-3 font-medium">Cor</th>
                   <th className="px-6 py-3 font-medium">Nome</th>
                   <th className="px-6 py-3 font-medium">Tipo</th>
                   <th className="px-6 py-3 font-medium">Descrição</th>
@@ -111,6 +112,16 @@ export default function TagsPage() {
               <tbody>
                 {tags.map((tag) => (
                   <tr key={tag.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      {tag.color ? (
+                        <span
+                          className="inline-block h-5 w-5 rounded-full border border-gray-200"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-medium text-gray-900">{tag.name}</td>
                     <td className="px-6 py-4">
                       {tag.tagType !== null ? (

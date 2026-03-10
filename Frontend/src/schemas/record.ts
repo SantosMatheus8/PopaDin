@@ -1,10 +1,12 @@
 import { z } from "zod";
 
 export const recordSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
   operation: z.number().min(0).max(1),
-  value: z.number().min(0, "Valor deve ser maior ou igual a zero"),
-  frequency: z.number().min(0).max(4),
+  value: z.number().gt(0, "Valor deve ser maior que zero"),
+  frequency: z.number().min(0).max(5),
   tagIds: z.array(z.number()),
+  referenceDate: z.string().optional(),
 });
 
 export type RecordFormData = z.infer<typeof recordSchema>;

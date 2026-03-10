@@ -63,9 +63,11 @@ public class RecordService(
         var applyNew = updateRecordRequest.CalculateBalanceImpact();
         var netAmount = revertOld + applyNew;
 
+        record.Name = updateRecordRequest.Name;
         record.Operation = updateRecordRequest.Operation;
         record.Value = updateRecordRequest.Value;
         record.Frequency = updateRecordRequest.Frequency;
+        record.ReferenceDate = updateRecordRequest.ReferenceDate ?? record.ReferenceDate;
         record.Tags = tags;
         await repository.UpdateRecordAsync(record);
 

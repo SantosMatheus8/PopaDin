@@ -19,8 +19,8 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
         logger.LogInformation("Buscando dados do dashboard no MongoDB para o usuário {UserId}", userId);
 
         var matchFilter = Builders<RecordDocument>.Filter.Eq(r => r.UserId, userId)
-                          & Builders<RecordDocument>.Filter.Gte(r => r.CreatedAt, startDate)
-                          & Builders<RecordDocument>.Filter.Lte(r => r.CreatedAt, endDate);
+                          & Builders<RecordDocument>.Filter.Gte(r => r.ReferenceDate, startDate)
+                          & Builders<RecordDocument>.Filter.Lte(r => r.ReferenceDate, endDate);
 
         var pipeline = Collection.Aggregate()
             .Match(matchFilter)
@@ -69,7 +69,7 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
                 ),
                 AggregateFacet.Create("latestRecords",
                     PipelineDefinition<RecordDocument, BsonDocument>.Create(
-                        new BsonDocument("$sort", new BsonDocument("CreatedAt", -1)),
+                        new BsonDocument("$sort", new BsonDocument("ReferenceDate", -1)),
                         new BsonDocument("$limit", 5)
                     )
                 ),
@@ -134,6 +134,7 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
         return new Record
         {
             Id = doc["_id"].AsObjectId.ToString(),
+            Name = doc.Contains("Name") && !doc["Name"].IsBsonNull ? doc["Name"].AsString : "",
             Operation = (OperationEnum)doc["Operation"].AsInt32,
             Value = doc["Value"].IsDecimal128 ? (decimal)doc["Value"].AsDecimal128 : Convert.ToDecimal(doc["Value"].ToDouble()),
             Frequency = (FrequencyEnum)doc["Frequency"].AsInt32,
@@ -149,10 +150,16 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
                         : null,
                     Description = tagDoc.Contains("Description") && !tagDoc["Description"].IsBsonNull
                         ? tagDoc["Description"].AsString
+                        : null,
+                    Color = tagDoc.Contains("Color") && !tagDoc["Color"].IsBsonNull
+                        ? tagDoc["Color"].AsString
                         : null
                 };
             }).ToList() : [],
             User = new User { Id = doc["UserId"].AsInt32 },
+            ReferenceDate = doc.Contains("ReferenceDate") && !doc["ReferenceDate"].IsBsonNull
+                ? doc["ReferenceDate"].ToUniversalTime()
+                : doc["CreatedAt"].ToUniversalTime(),
             CreatedAt = doc["CreatedAt"].ToUniversalTime(),
             UpdatedAt = doc["UpdatedAt"].ToUniversalTime()
         };

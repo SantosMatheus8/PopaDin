@@ -4,17 +4,18 @@ public static class TagQueries
 {
     public const string CreateTag = @"
   INSERT INTO Tag
-          (Name, TagType, Description, UserId, CreatedAt, UpdatedAt)
+          (Name, TagType, Description, Color, UserId, CreatedAt, UpdatedAt)
           OUTPUT
             INSERTED.Id AS Id,
             INSERTED.Name AS Name,
             INSERTED.TagType AS TagType,
             INSERTED.Description AS Description,
+            INSERTED.Color AS Color,
             INSERTED.UserId AS UserId,
             INSERTED.CreatedAt AS CreatedAt,
             INSERTED.UpdatedAt AS UpdatedAt
           VALUES
-          (@Name, @TagType, @Description, @UserId, @CreatedAt, @UpdatedAt)
+          (@Name, @TagType, @Description, @Color, @UserId, @CreatedAt, @UpdatedAt)
            ";
 
     public const string ListTags = @"
@@ -23,6 +24,7 @@ public static class TagQueries
             t.Name AS Name,
             t.TagType AS TagType,
             t.Description AS Description,
+            t.Color AS Color,
             t.CreatedAt AS CreatedAt,
             t.UpdatedAt AS UpdatedAt,
             u.Id AS UserId,
@@ -44,7 +46,8 @@ public static class TagQueries
     public const string FindTagsByIds = @"
         SELECT t.Id,
                t.Name,
-               t.TagType
+               t.TagType,
+               t.Color
         FROM Tag t WITH(NOLOCK)
         WHERE t.Id IN @Ids AND t.UserId = @UserId";
 
@@ -53,6 +56,7 @@ public static class TagQueries
                t.Name,
                t.TagType,
                t.Description,
+               t.Color,
                t.CreatedAt,
                t.UpdatedAt
         FROM Tag t WITH(NOLOCK)
@@ -64,6 +68,7 @@ public static class TagQueries
             t.Name AS Name,
             t.TagType AS TagType,
             t.Description AS Description,
+            t.Color AS Color,
             t.CreatedAt AS CreatedAt,
             t.UpdatedAt AS UpdatedAt,
             u.Id AS UserId,
@@ -82,6 +87,7 @@ public static class TagQueries
         SET Name = @Name,
             TagType = @TagType,
             Description = @Description,
+            Color = @Color,
             UpdatedAt = @UpdatedAt
         WHERE Id = @TagId";
 
