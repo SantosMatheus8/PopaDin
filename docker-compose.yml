@@ -145,6 +145,17 @@ services:
       - BlobStorageSettings__ContainerName=pdf-exports
     restart: unless-stopped
 
+  popadin-frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: popadin-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - popadin-api
+    restart: unless-stopped
+
 volumes:
   sqlserver_data:
   mongodb_data:
