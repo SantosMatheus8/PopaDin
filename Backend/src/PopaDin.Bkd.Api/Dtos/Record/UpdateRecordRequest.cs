@@ -10,4 +10,5 @@ public class UpdateRecordRequest
     public FrequencyEnum Frequency { get; set; }
     public List<int> TagIds { get; set; } = [];
     public DateTime? ReferenceDate { get; set; }
+    public int? Installments { get; set; }
 }

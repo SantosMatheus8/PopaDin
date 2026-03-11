@@ -21,6 +21,11 @@ public class RecordDocument
     public DateTime ReferenceDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    // Installment fields
+    public string? InstallmentGroupId { get; set; }
+    public int? InstallmentIndex { get; set; }
+    public int? InstallmentTotal { get; set; }
 }
 
 public class RecordTagSubDocument

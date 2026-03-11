@@ -7,6 +7,7 @@ export const recordSchema = z.object({
   frequency: z.number().min(0).max(5),
   tagIds: z.array(z.number()),
   referenceDate: z.string().optional(),
+  installments: z.number().min(2).max(48).optional(),
 });
 
 export type RecordFormData = z.infer<typeof recordSchema>;

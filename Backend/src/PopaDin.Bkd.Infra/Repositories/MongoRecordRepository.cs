@@ -81,12 +81,52 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         await Collection.ReplaceOneAsync(filter, document);
     }
 
+    public async Task<List<Record>> CreateManyRecordsAsync(List<Record> records)
+    {
+        logger.LogInformation("Criando {Count} Records no MongoDB", records.Count);
+
+        var documents = records.Select(r =>
+        {
+            var doc = MapToDocument(r);
+            doc.CreatedAt = DateTime.UtcNow;
+            doc.UpdatedAt = DateTime.UtcNow;
+            return doc;
+        }).ToList();
+
+        await Collection.InsertManyAsync(documents);
+
+        return documents.Select(MapToRecord).ToList();
+    }
+
     public async Task DeleteRecordAsync(string recordId)
     {
         logger.LogInformation("Deletando Record: {RecordId}", recordId);
 
         var filter = Builders<RecordDocument>.Filter.Eq(r => r.Id, recordId);
         await Collection.DeleteOneAsync(filter);
+    }
+
+    public async Task DeleteManyByInstallmentGroupAsync(string installmentGroupId, int userId)
+    {
+        logger.LogInformation("Deletando Records do grupo de parcelas: {GroupId}", installmentGroupId);
+
+        var filter = Builders<RecordDocument>.Filter.Eq(r => r.InstallmentGroupId, installmentGroupId)
+                     & Builders<RecordDocument>.Filter.Eq(r => r.UserId, userId);
+        await Collection.DeleteManyAsync(filter);
+    }
+
+    public async Task<List<Record>> FindByInstallmentGroupAsync(string installmentGroupId, int userId)
+    {
+        logger.LogInformation("Buscando Records do grupo de parcelas: {GroupId}", installmentGroupId);
+
+        var filter = Builders<RecordDocument>.Filter.Eq(r => r.InstallmentGroupId, installmentGroupId)
+                     & Builders<RecordDocument>.Filter.Eq(r => r.UserId, userId);
+
+        var documents = await Collection.Find(filter)
+            .Sort(Builders<RecordDocument>.Sort.Ascending(r => r.InstallmentIndex))
+            .ToListAsync();
+
+        return documents.Select(MapToRecord).ToList();
     }
 
     private static FilterDefinition<RecordDocument> BuildFilter(ListRecords listRecords)
@@ -145,7 +185,10 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
             }).ToList(),
             ReferenceDate = record.ReferenceDate ?? DateTime.UtcNow,
             CreatedAt = record.CreatedAt ?? DateTime.UtcNow,
-            UpdatedAt = record.UpdatedAt ?? DateTime.UtcNow
+            UpdatedAt = record.UpdatedAt ?? DateTime.UtcNow,
+            InstallmentGroupId = record.InstallmentGroupId,
+            InstallmentIndex = record.InstallmentIndex,
+            InstallmentTotal = record.InstallmentTotal
         };
     }
 
@@ -169,7 +212,10 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
             User = new User { Id = document.UserId },
             ReferenceDate = document.ReferenceDate,
             CreatedAt = document.CreatedAt,
-            UpdatedAt = document.UpdatedAt
+            UpdatedAt = document.UpdatedAt,
+            InstallmentGroupId = document.InstallmentGroupId,
+            InstallmentIndex = document.InstallmentIndex,
+            InstallmentTotal = document.InstallmentTotal
         };
     }
 }

@@ -15,6 +15,9 @@ public class Record
     public DateTime? UpdatedAt { get; set; }
     public List<Tag> Tags { get; set; } = new List<Tag>();
     public User User { get; set; } = new();
+    public string? InstallmentGroupId { get; set; }
+    public int? InstallmentIndex { get; set; }
+    public int? InstallmentTotal { get; set; }
 
     public void ValidateValue()
     {

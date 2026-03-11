@@ -110,6 +110,9 @@ export interface RecordResponse {
   createdAt: string;
   updatedAt: string;
   tags: RecordTagResponse[];
+  installmentGroupId: string | null;
+  installmentIndex: number | null;
+  installmentTotal: number | null;
 }
 
 export interface CreateRecordRequest {
@@ -119,6 +122,7 @@ export interface CreateRecordRequest {
   frequency: FrequencyEnum;
   tagIds: number[];
   referenceDate?: string;
+  installments?: number;
 }
 
 export interface UpdateRecordRequest {
@@ -128,6 +132,7 @@ export interface UpdateRecordRequest {
   frequency: FrequencyEnum;
   tagIds: number[];
   referenceDate?: string;
+  installments?: number;
 }
 
 export interface ListRecordsRequest extends PaginationParams {

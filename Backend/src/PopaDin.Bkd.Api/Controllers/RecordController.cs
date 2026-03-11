@@ -27,7 +27,7 @@ public class RecordController(
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = createRecordRequest.Adapt<Record>();
-        Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds, userId);
+        Record recordCreated = await recordService.CreateRecordAsync(record, createRecordRequest.TagIds, userId, createRecordRequest.Installments);
         var recordResponse = recordCreated.Adapt<RecordResponse>();
         return StatusCode(StatusCodes.Status201Created, recordResponse);
     }
@@ -63,7 +63,7 @@ public class RecordController(
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var record = updateRecordRequest.Adapt<Record>();
-        Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId, userId);
+        Record updatedRecord = await recordService.UpdateRecordAsync(record, updateRecordRequest.TagIds, recordId, userId, updateRecordRequest.Installments);
         var recordResponse = updatedRecord.Adapt<RecordResponse>();
         return Ok(recordResponse);
     }

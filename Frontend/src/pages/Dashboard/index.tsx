@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -16,12 +16,23 @@ import { OperationLabels, FrequencyLabels, OperationEnum } from "../../types/enu
 function getMonthOptions() {
   const options: { value: string; label: string }[] = [];
   const now = new Date();
+
+  // 11 months in the past + current month
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
     options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
+
+  // 12 months in the future
+  for (let i = 1; i <= 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+  }
+
   return options;
 }
 
@@ -35,6 +46,12 @@ function parsePeriod(period: string) {
   };
 }
 
+function isFuturePeriod(period: string): boolean {
+  const now = new Date();
+  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return period > currentPeriod;
+}
+
 export default function DashboardPage() {
   const now = new Date();
   const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -42,6 +59,7 @@ export default function DashboardPage() {
   const monthOptions = getMonthOptions();
 
   const { startDate, endDate } = parsePeriod(selectedPeriod);
+  const isProjection = useMemo(() => isFuturePeriod(selectedPeriod), [selectedPeriod]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", selectedPeriod],
@@ -65,7 +83,14 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          {isProjection && (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              Projeção
+            </span>
+          )}
+        </div>
         <select
           value={selectedPeriod}
           onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -78,6 +103,12 @@ export default function DashboardPage() {
           ))}
         </select>
       </div>
+
+      {isProjection && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Você está visualizando uma projeção. Os valores exibidos correspondem apenas a registros já lançados para este período (parcelas futuras e registros recorrentes).
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -115,7 +146,7 @@ export default function DashboardPage() {
               <Wallet className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Saldo</p>
+              <p className="text-sm text-gray-500">{isProjection ? "Saldo Projetado" : "Saldo"}</p>
               <p className={`text-xl font-bold ${summary.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
                 {formatCurrency(summary.balance)}
               </p>
@@ -151,10 +182,10 @@ export default function DashboardPage() {
                     <Badge
                       variant={
                         budget.status === "exceeded"
-                          ? "error"
+                          ? "success"   
                           : budget.status === "alert"
                           ? "warning"
-                          : "success"
+                          : "error"    
                       }
                     >
                       {budget.usedPercentage}%
@@ -164,10 +195,10 @@ export default function DashboardPage() {
                     <div
                       className={`h-full rounded-full transition-all ${
                         budget.status === "exceeded"
-                          ? "bg-red-500"
+                          ? "bg-green-500"
                           : budget.status === "alert"
                           ? "bg-amber-500"
-                          : "bg-green-500"
+                          : "bg-red-500"  
                       }`}
                       style={{ width: `${Math.min(budget.usedPercentage, 100)}%` }}
                     />
@@ -203,7 +234,9 @@ export default function DashboardPage() {
 
       {/* Latest Records */}
       <Card>
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Últimos Registros</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          {isProjection ? "Registros Projetados" : "Últimos Registros"}
+        </h2>
         {latestRecords.length === 0 ? (
           <p className="text-sm text-gray-400">Nenhum registro encontrado.</p>
         ) : (
@@ -223,7 +256,14 @@ export default function DashboardPage() {
                 {latestRecords.map((record) => (
                   <tr key={record.id} className="border-b last:border-0">
                     <td className="py-3 text-gray-600">{formatDate(record.referenceDate)}</td>
-                    <td className="py-3 font-medium text-gray-900">{record.name || "-"}</td>
+                    <td className="py-3 font-medium text-gray-900">
+                      {record.name || "-"}
+                      {record.installmentTotal != null && record.installmentTotal > 1 && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {record.installmentIndex}/{record.installmentTotal}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3">
                       <Badge variant={record.operation === OperationEnum.Deposit ? "success" : "error"}>
                         {OperationLabels[record.operation]}

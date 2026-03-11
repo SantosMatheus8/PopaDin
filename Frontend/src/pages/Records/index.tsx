@@ -37,7 +37,7 @@ export default function RecordsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: RecordFormData) =>
-      recordService.create({ ...data, tagIds: data.tagIds ?? [] }),
+      recordService.create({ ...data, tagIds: data.tagIds ?? [], installments: data.installments }),
     onSuccess: () => {
       toast.success("Registro criado!");
       queryClient.invalidateQueries({ queryKey: ["records"] });
@@ -48,7 +48,7 @@ export default function RecordsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: RecordFormData }) =>
-      recordService.update(id, { ...data, tagIds: data.tagIds ?? [] }),
+      recordService.update(id, { ...data, tagIds: data.tagIds ?? [], installments: data.installments }),
     onSuccess: () => {
       toast.success("Registro atualizado!");
       queryClient.invalidateQueries({ queryKey: ["records"] });
@@ -154,7 +154,14 @@ export default function RecordsPage() {
                 {records.map((record) => (
                   <tr key={record.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-6 py-4 text-gray-600">{formatDate(record.referenceDate)}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{record.name || "-"}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {record.name || "-"}
+                      {record.installmentTotal != null && record.installmentTotal > 1 && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {record.installmentIndex}/{record.installmentTotal}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <Badge variant={record.operation === OperationEnum.Deposit ? "success" : "error"}>
                         {OperationLabels[record.operation]}
@@ -236,7 +243,11 @@ export default function RecordsPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         title="Excluir registro"
-        message="Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+        message={
+          deleteTarget?.installmentTotal != null && deleteTarget.installmentTotal > 1
+            ? `Este registro faz parte de um parcelamento (${deleteTarget.installmentTotal}x). Todas as parcelas serão excluídas. Esta ação não pode ser desfeita.`
+            : "Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+        }
         confirmLabel="Excluir"
         isLoading={deleteMutation.isPending}
       />

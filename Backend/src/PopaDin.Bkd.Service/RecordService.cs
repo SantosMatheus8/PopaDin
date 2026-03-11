@@ -15,7 +15,7 @@ public class RecordService(
     IRecordEventPublisher recordEventPublisher,
     ILogger<RecordService> logger) : IRecordService
 {
-    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, int userId)
+    public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, int userId, int? installments = null)
     {
         logger.LogInformation("Criando Record");
 
@@ -25,14 +25,32 @@ public class RecordService(
 
         record.User = new User { Id = userId };
         record.Tags = tags;
+
+        if (installments.HasValue && installments.Value > 1)
+        {
+            var createdRecords = await CreateInstallmentRecordsAsync(record, installments.Value);
+            var firstRecord = createdRecords.First();
+
+            var totalBalanceImpact = createdRecords.Sum(r => r.CalculateBalanceImpact());
+            await userRepository.UpdateBalanceAsync(userId, totalBalanceImpact);
+
+            var user = await userRepository.FindUserByIdAsync(userId);
+            await recordEventPublisher.PublishRecordCreatedAsync(
+                userId, record.Value, record.Operation, user.Balance);
+
+            await dashboardCacheRepository.InvalidateAsync(userId);
+
+            return firstRecord;
+        }
+
         var recordCreated = await repository.CreateRecordAsync(record);
 
         var balanceAmount = record.CalculateBalanceImpact();
         await userRepository.UpdateBalanceAsync(userId, balanceAmount);
 
-        var user = await userRepository.FindUserByIdAsync(userId);
+        var userAfter = await userRepository.FindUserByIdAsync(userId);
         await recordEventPublisher.PublishRecordCreatedAsync(
-            userId, record.Value, record.Operation, user.Balance);
+            userId, record.Value, record.Operation, userAfter.Balance);
 
         await dashboardCacheRepository.InvalidateAsync(userId);
 
@@ -52,16 +70,67 @@ public class RecordService(
         return await FindRecordOrThrowAsync(recordId, userId);
     }
 
-    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, string recordId, int userId)
+    public async Task<Record> UpdateRecordAsync(Record updateRecordRequest, List<int> tagIds, string recordId, int userId, int? installments = null)
     {
         logger.LogInformation("Editando um Record");
         Record record = await FindRecordOrThrowAsync(recordId, userId);
 
         var tags = await GetValidatedTagsAsync(tagIds, userId);
 
-        var revertOld = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
+        if (record.InstallmentGroupId != null)
+        {
+            var oldGroupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
+            var oldTotalBalance = oldGroupRecords.Sum(r => r.CalculateBalanceImpact());
+
+            await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
+
+            if (installments.HasValue && installments.Value > 1)
+            {
+                updateRecordRequest.Tags = tags;
+                updateRecordRequest.User = new User { Id = userId };
+                var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
+
+                var newTotalBalance = newRecords.Sum(r => r.CalculateBalanceImpact());
+                var netAmount = -oldTotalBalance + newTotalBalance;
+                await userRepository.UpdateBalanceAsync(userId, netAmount);
+
+                await dashboardCacheRepository.InvalidateAsync(userId);
+                return newRecords.First();
+            }
+            else
+            {
+                updateRecordRequest.Tags = tags;
+                updateRecordRequest.User = new User { Id = userId };
+                var newRecord = await repository.CreateRecordAsync(updateRecordRequest);
+
+                var netAmount = -oldTotalBalance + updateRecordRequest.CalculateBalanceImpact();
+                await userRepository.UpdateBalanceAsync(userId, netAmount);
+
+                await dashboardCacheRepository.InvalidateAsync(userId);
+                return newRecord;
+            }
+        }
+
+        if (installments.HasValue && installments.Value > 1)
+        {
+            var revertOld = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
+            await repository.DeleteRecordAsync(recordId);
+
+            updateRecordRequest.Tags = tags;
+            updateRecordRequest.User = new User { Id = userId };
+            var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
+
+            var newTotalBalance = newRecords.Sum(r => r.CalculateBalanceImpact());
+            var netAmount = revertOld + newTotalBalance;
+            await userRepository.UpdateBalanceAsync(userId, netAmount);
+
+            await dashboardCacheRepository.InvalidateAsync(userId);
+            return newRecords.First();
+        }
+
+        var revertOldBalance = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
         var applyNew = updateRecordRequest.CalculateBalanceImpact();
-        var netAmount = revertOld + applyNew;
+        var balanceNet = revertOldBalance + applyNew;
 
         record.Name = updateRecordRequest.Name;
         record.Operation = updateRecordRequest.Operation;
@@ -71,7 +140,7 @@ public class RecordService(
         record.Tags = tags;
         await repository.UpdateRecordAsync(record);
 
-        await userRepository.UpdateBalanceAsync(userId, netAmount);
+        await userRepository.UpdateBalanceAsync(userId, balanceNet);
 
         await dashboardCacheRepository.InvalidateAsync(userId);
 
@@ -82,12 +151,52 @@ public class RecordService(
     {
         Record record = await FindRecordOrThrowAsync(recordId, userId);
 
-        await repository.DeleteRecordAsync(recordId);
+        if (record.InstallmentGroupId != null)
+        {
+            var groupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
+            var totalRevert = groupRecords.Sum(r =>
+                r.Operation == Domain.Enums.OperationEnum.Deposit ? -r.Value : r.Value);
 
-        var revertAmount = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
-        await userRepository.UpdateBalanceAsync(userId, revertAmount);
+            await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
+            await userRepository.UpdateBalanceAsync(userId, totalRevert);
+        }
+        else
+        {
+            await repository.DeleteRecordAsync(recordId);
+
+            var revertAmount = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
+            await userRepository.UpdateBalanceAsync(userId, revertAmount);
+        }
 
         await dashboardCacheRepository.InvalidateAsync(userId);
+    }
+
+    private async Task<List<Record>> CreateInstallmentRecordsAsync(Record baseRecord, int installmentCount)
+    {
+        var groupId = Guid.NewGuid().ToString("N");
+        var installmentValue = Math.Round(baseRecord.Value / installmentCount, 2);
+        var baseDate = baseRecord.ReferenceDate ?? DateTime.UtcNow;
+
+        var records = new List<Record>();
+
+        for (int i = 0; i < installmentCount; i++)
+        {
+            records.Add(new Record
+            {
+                Name = baseRecord.Name,
+                Operation = baseRecord.Operation,
+                Value = installmentValue,
+                Frequency = baseRecord.Frequency,
+                ReferenceDate = baseDate.AddMonths(i),
+                Tags = baseRecord.Tags,
+                User = baseRecord.User,
+                InstallmentGroupId = groupId,
+                InstallmentIndex = i + 1,
+                InstallmentTotal = installmentCount
+            });
+        }
+
+        return await repository.CreateManyRecordsAsync(records);
     }
 
     private async Task<List<Tag>> GetValidatedTagsAsync(List<int> tagIds, int userId)

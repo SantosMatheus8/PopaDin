@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -27,6 +27,7 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
   });
 
   const today = new Date().toISOString().slice(0, 10);
+  const [isInstallment, setIsInstallment] = useState(false);
 
   const {
     register,
@@ -43,15 +44,19 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
   useEffect(() => {
     if (isOpen) {
       if (record) {
+        const hasInstallment = record.installmentTotal != null && record.installmentTotal > 1;
+        setIsInstallment(hasInstallment);
         reset({
           name: record.name,
           operation: record.operation,
-          value: record.value,
+          value: hasInstallment ? record.value * record.installmentTotal! : record.value,
           frequency: record.frequency,
           tagIds: record.tags.map((t) => t.id).filter((id): id is number => id !== null),
           referenceDate: record.referenceDate ? record.referenceDate.slice(0, 10) : today,
+          installments: hasInstallment ? record.installmentTotal! : undefined,
         });
       } else {
+        setIsInstallment(false);
         reset({ name: "", operation: OperationEnum.Outflow, frequency: FrequencyEnum.Monthly, tagIds: [], referenceDate: today });
       }
     }
@@ -69,13 +74,25 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
     }
   };
 
+  const handleInstallmentToggle = () => {
+    const next = !isInstallment;
+    setIsInstallment(next);
+    if (!next) {
+      setValue("installments", undefined);
+    } else {
+      setValue("installments", 2);
+    }
+  };
+
   const handleFormSubmit = async (data: RecordFormData) => {
     const submitData = {
       ...data,
       referenceDate: data.referenceDate || undefined,
+      installments: isInstallment ? data.installments : undefined,
     };
     await onSubmit(submitData);
     reset();
+    setIsInstallment(false);
     onClose();
   };
 
@@ -128,6 +145,30 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
           error={errors.referenceDate?.message}
           {...register("referenceDate")}
         />
+
+        {/* Installment toggle */}
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isInstallment}
+              onChange={handleInstallmentToggle}
+              className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Parcelar</span>
+          </label>
+          {isInstallment && (
+            <Input
+              label="Número de parcelas"
+              type="number"
+              min={2}
+              max={48}
+              placeholder="2"
+              error={errors.installments?.message}
+              {...register("installments", { valueAsNumber: true })}
+            />
+          )}
+        </div>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Tags</label>

@@ -14,4 +14,7 @@ public class RecordResponse
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<RecordTagResponse> Tags { get; set; } = new List<RecordTagResponse>();
+    public string? InstallmentGroupId { get; set; }
+    public int? InstallmentIndex { get; set; }
+    public int? InstallmentTotal { get; set; }
 }
