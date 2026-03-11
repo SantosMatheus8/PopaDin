@@ -129,6 +129,23 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         return documents.Select(MapToRecord).ToList();
     }
 
+    public async Task<List<Record>> GetRecurringRecordsAsync(int userId)
+    {
+        logger.LogInformation("Buscando Records recorrentes do usuário {UserId}", userId);
+
+        var builder = Builders<RecordDocument>.Filter;
+        var filter = builder.Eq(r => r.UserId, userId)
+                     & builder.Ne(r => r.Frequency, (int)FrequencyEnum.OneTime)
+                     & builder.Or(
+                         builder.Eq(r => r.InstallmentGroupId, (string?)null),
+                         builder.Exists(r => r.InstallmentGroupId, false)
+                     );
+
+        var documents = await Collection.Find(filter).ToListAsync();
+
+        return documents.Select(MapToRecord).ToList();
+    }
+
     private static FilterDefinition<RecordDocument> BuildFilter(ListRecords listRecords)
     {
         var builder = Builders<RecordDocument>.Filter;
@@ -188,7 +205,8 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
             UpdatedAt = record.UpdatedAt ?? DateTime.UtcNow,
             InstallmentGroupId = record.InstallmentGroupId,
             InstallmentIndex = record.InstallmentIndex,
-            InstallmentTotal = record.InstallmentTotal
+            InstallmentTotal = record.InstallmentTotal,
+            RecurrenceEndDate = record.RecurrenceEndDate
         };
     }
 
@@ -215,7 +233,8 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
             UpdatedAt = document.UpdatedAt,
             InstallmentGroupId = document.InstallmentGroupId,
             InstallmentIndex = document.InstallmentIndex,
-            InstallmentTotal = document.InstallmentTotal
+            InstallmentTotal = document.InstallmentTotal,
+            RecurrenceEndDate = document.RecurrenceEndDate
         };
     }
 }

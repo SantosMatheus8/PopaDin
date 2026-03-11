@@ -1,6 +1,8 @@
+using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
+using PopaDin.Bkd.Domain.Utils;
 
 namespace PopaDin.Bkd.Service;
 
@@ -9,6 +11,7 @@ public class DashboardService(
     IDashboardCacheRepository cacheRepository,
     IBudgetRepository budgetRepository,
     IUserRepository userRepository,
+    IRecordRepository recordRepository,
     ILogger<DashboardService> logger) : IDashboardService
 {
     public async Task<DashboardResult> GetDashboardAsync(int userId, DateTime? startDate, DateTime? endDate)
@@ -35,14 +38,98 @@ public class DashboardService(
             ItemsPerPage = 100
         });
         var userTask = userRepository.FindUserByIdAsync(userId);
+        var recurringTask = recordRepository.GetRecurringRecordsAsync(userId);
 
-        await Task.WhenAll(dashboardTask, budgetsTask, userTask);
+        await Task.WhenAll(dashboardTask, budgetsTask, userTask, recurringTask);
 
         var dashboard = dashboardTask.Result;
         var budgets = budgetsTask.Result;
         var user = userTask.Result;
+        var recurringRecords = recurringTask.Result;
 
-        dashboard.Summary.Balance = user.Balance;
+        var projectedRecords = recurringRecords
+            .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, resolvedStart, resolvedEnd))
+            .ToList();
+
+        if (projectedRecords.Count > 0)
+        {
+            var projectedDeposits = projectedRecords
+                .Where(r => r.Operation == OperationEnum.Deposit)
+                .Sum(r => r.Value);
+
+            var projectedOutflows = projectedRecords
+                .Where(r => r.Operation == OperationEnum.Outflow)
+                .Sum(r => r.Value);
+
+            dashboard.Summary.TotalDeposits += projectedDeposits;
+            dashboard.Summary.TotalOutflows += projectedOutflows;
+            dashboard.Summary.RecordCount += projectedRecords.Count;
+
+            var projectedSpending = projectedRecords
+                .Where(r => r.Operation == OperationEnum.Outflow)
+                .SelectMany(r => r.Tags.Select(t => new { Tag = t, r.Value }))
+                .GroupBy(x => new { x.Tag.Id, x.Tag.Name })
+                .Select(g => new DashboardSpendingByTag
+                {
+                    TagId = g.Key.Id!.Value,
+                    TagName = g.Key.Name,
+                    TotalSpent = g.Sum(x => x.Value)
+                })
+                .ToList();
+
+            foreach (var projected in projectedSpending)
+            {
+                var existing = dashboard.SpendingByTag.FirstOrDefault(s => s.TagId == projected.TagId);
+                if (existing != null)
+                    existing.TotalSpent += projected.TotalSpent;
+                else
+                    dashboard.SpendingByTag.Add(projected);
+            }
+
+            dashboard.SpendingByTag = dashboard.SpendingByTag.OrderByDescending(s => s.TotalSpent).ToList();
+
+            var allLatest = dashboard.LatestRecords.Concat(projectedRecords)
+                .OrderByDescending(r => r.ReferenceDate)
+                .Take(5)
+                .ToList();
+            dashboard.LatestRecords = allLatest;
+
+            var allTopDeposits = dashboard.TopDeposits
+                .Concat(projectedRecords.Where(r => r.Operation == OperationEnum.Deposit))
+                .OrderByDescending(r => r.Value)
+                .Take(5)
+                .ToList();
+            dashboard.TopDeposits = allTopDeposits;
+
+            var allTopOutflows = dashboard.TopOutflows
+                .Concat(projectedRecords.Where(r => r.Operation == OperationEnum.Outflow))
+                .OrderByDescending(r => r.Value)
+                .Take(5)
+                .ToList();
+            dashboard.TopOutflows = allTopOutflows;
+        }
+
+        // Calculate balance: for future periods, project cumulative recurring impact
+        var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var isFuturePeriod = resolvedStart > currentMonthStart;
+
+        if (isFuturePeriod)
+        {
+            // Projected balance = current balance + cumulative impact of all recurring
+            // records from now through the end of the viewed period
+            var cumulativeProjected = recurringRecords
+                .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, now, resolvedEnd))
+                .ToList();
+
+            var cumulativeImpact = cumulativeProjected
+                .Sum(r => r.CalculateBalanceImpact());
+
+            dashboard.Summary.Balance = user.Balance + cumulativeImpact;
+        }
+        else
+        {
+            dashboard.Summary.Balance = user.Balance;
+        }
 
         dashboard.Budgets = budgets.Lines
             .Where(b => b.FinishAt == null)

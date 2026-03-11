@@ -37,7 +37,7 @@ export default function RecordsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: RecordFormData) =>
-      recordService.create({ ...data, tagIds: data.tagIds ?? [], installments: data.installments }),
+      recordService.create({ ...data, tagIds: data.tagIds ?? [], installments: data.installments, recurrenceEndDate: data.recurrenceEndDate }),
     onSuccess: () => {
       toast.success("Registro criado!");
       queryClient.invalidateQueries({ queryKey: ["records"] });
@@ -48,7 +48,7 @@ export default function RecordsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: RecordFormData }) =>
-      recordService.update(id, { ...data, tagIds: data.tagIds ?? [], installments: data.installments }),
+      recordService.update(id, { ...data, tagIds: data.tagIds ?? [], installments: data.installments, recurrenceEndDate: data.recurrenceEndDate }),
     onSuccess: () => {
       toast.success("Registro atualizado!");
       queryClient.invalidateQueries({ queryKey: ["records"] });

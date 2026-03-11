@@ -140,8 +140,9 @@ public class PdfGeneratorService(ILogger<PdfGeneratorService> logger) : IPdfGene
                 var frequency = GetFrequencyName(record.Frequency);
                 var tags = string.Join(", ", record.Tags.Select(t => t.Name));
 
+                var displayDate = record.ReferenceDate ?? record.CreatedAt;
                 table.Cell().Background(bgColor).Padding(5)
-                    .Text(record.CreatedAt.ToString("dd/MM/yyyy"));
+                    .Text(displayDate.ToString("dd/MM/yyyy"));
                 table.Cell().Background(bgColor).Padding(5)
                     .Text($"R$ {record.Value:N2}").FontColor(valueColor);
                 table.Cell().Background(bgColor).Padding(5)

@@ -19,6 +19,10 @@ public class Record
     public int? InstallmentIndex { get; set; }
     public int? InstallmentTotal { get; set; }
 
+    public DateTime? RecurrenceEndDate { get; set; }
+
+    public bool IsRecurring => Frequency != FrequencyEnum.OneTime && InstallmentGroupId == null;
+
     public void ValidateValue()
     {
         if (Value <= 0)

@@ -11,4 +11,5 @@ public class CreateRecordRequest
     public List<int> TagIds { get; set; } = [];
     public DateTime? ReferenceDate { get; set; }
     public int? Installments { get; set; }
+    public DateTime? RecurrenceEndDate { get; set; }
 }

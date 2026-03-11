@@ -12,4 +12,5 @@ public interface IRecordRepository
     Task DeleteRecordAsync(string recordId);
     Task DeleteManyByInstallmentGroupAsync(string installmentGroupId, int userId);
     Task<List<Record>> FindByInstallmentGroupAsync(string installmentGroupId, int userId);
+    Task<List<Record>> GetRecurringRecordsAsync(int userId);
 }

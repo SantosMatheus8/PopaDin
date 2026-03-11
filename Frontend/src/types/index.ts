@@ -113,6 +113,7 @@ export interface RecordResponse {
   installmentGroupId: string | null;
   installmentIndex: number | null;
   installmentTotal: number | null;
+  recurrenceEndDate: string | null;
 }
 
 export interface CreateRecordRequest {
@@ -123,6 +124,7 @@ export interface CreateRecordRequest {
   tagIds: number[];
   referenceDate?: string;
   installments?: number;
+  recurrenceEndDate?: string;
 }
 
 export interface UpdateRecordRequest {
@@ -133,6 +135,7 @@ export interface UpdateRecordRequest {
   tagIds: number[];
   referenceDate?: string;
   installments?: number;
+  recurrenceEndDate?: string;
 }
 
 export interface ListRecordsRequest extends PaginationParams {

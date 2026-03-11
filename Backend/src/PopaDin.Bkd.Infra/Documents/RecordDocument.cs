@@ -26,6 +26,8 @@ public class RecordDocument
     public string? InstallmentGroupId { get; set; }
     public int? InstallmentIndex { get; set; }
     public int? InstallmentTotal { get; set; }
+
+    public DateTime? RecurrenceEndDate { get; set; }
 }
 
 public class RecordTagSubDocument

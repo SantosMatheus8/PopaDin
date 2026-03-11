@@ -18,9 +18,20 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
     {
         logger.LogInformation("Buscando dados do dashboard no MongoDB para o usuário {UserId}", userId);
 
-        var matchFilter = Builders<RecordDocument>.Filter.Eq(r => r.UserId, userId)
-                          & Builders<RecordDocument>.Filter.Gte(r => r.ReferenceDate, startDate)
-                          & Builders<RecordDocument>.Filter.Lte(r => r.ReferenceDate, endDate);
+        var builder = Builders<RecordDocument>.Filter;
+
+        var notRecurring = builder.Or(
+            builder.Eq(r => r.Frequency, (int)FrequencyEnum.OneTime),
+            builder.And(
+                builder.Ne(r => r.InstallmentGroupId, (string?)null),
+                builder.Exists(r => r.InstallmentGroupId, true)
+            )
+        );
+
+        var matchFilter = builder.Eq(r => r.UserId, userId)
+                          & builder.Gte(r => r.ReferenceDate, startDate)
+                          & builder.Lte(r => r.ReferenceDate, endDate)
+                          & notRecurring;
 
         var pipeline = Collection.Aggregate()
             .Match(matchFilter)

@@ -1,8 +1,10 @@
+using PopaDin.Bkd.Domain.Enums;
 using PopaDin.Bkd.Domain.Exceptions;
 using PopaDin.Bkd.Domain.Interfaces.Publishers;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
+using PopaDin.Bkd.Domain.Utils;
 
 namespace PopaDin.Bkd.Service;
 
@@ -31,8 +33,9 @@ public class RecordService(
             var createdRecords = await CreateInstallmentRecordsAsync(record, installments.Value);
             var firstRecord = createdRecords.First();
 
-            var totalBalanceImpact = createdRecords.Sum(r => r.CalculateBalanceImpact());
-            await userRepository.UpdateBalanceAsync(userId, totalBalanceImpact);
+            var balanceImpact = CalculateBalanceImpactByDate(createdRecords);
+            if (balanceImpact != 0)
+                await userRepository.UpdateBalanceAsync(userId, balanceImpact);
 
             var user = await userRepository.FindUserByIdAsync(userId);
             await recordEventPublisher.PublishRecordCreatedAsync(
@@ -45,8 +48,9 @@ public class RecordService(
 
         var recordCreated = await repository.CreateRecordAsync(record);
 
-        var balanceAmount = record.CalculateBalanceImpact();
-        await userRepository.UpdateBalanceAsync(userId, balanceAmount);
+        var singleBalanceImpact = CalculateSingleRecordBalanceImpact(recordCreated);
+        if (singleBalanceImpact != 0)
+            await userRepository.UpdateBalanceAsync(userId, singleBalanceImpact);
 
         var userAfter = await userRepository.FindUserByIdAsync(userId);
         await recordEventPublisher.PublishRecordCreatedAsync(
@@ -80,7 +84,7 @@ public class RecordService(
         if (record.InstallmentGroupId != null)
         {
             var oldGroupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            var oldTotalBalance = oldGroupRecords.Sum(r => r.CalculateBalanceImpact());
+            var oldBalance = CalculateBalanceImpactByDate(oldGroupRecords);
 
             await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
 
@@ -90,9 +94,9 @@ public class RecordService(
                 updateRecordRequest.User = new User { Id = userId };
                 var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
 
-                var newTotalBalance = newRecords.Sum(r => r.CalculateBalanceImpact());
-                var netAmount = -oldTotalBalance + newTotalBalance;
-                await userRepository.UpdateBalanceAsync(userId, netAmount);
+                var newBalance = CalculateBalanceImpactByDate(newRecords);
+                var net = -oldBalance + newBalance;
+                if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
 
                 await dashboardCacheRepository.InvalidateAsync(userId);
                 return newRecords.First();
@@ -103,8 +107,9 @@ public class RecordService(
                 updateRecordRequest.User = new User { Id = userId };
                 var newRecord = await repository.CreateRecordAsync(updateRecordRequest);
 
-                var netAmount = -oldTotalBalance + updateRecordRequest.CalculateBalanceImpact();
-                await userRepository.UpdateBalanceAsync(userId, netAmount);
+                var newBalance = CalculateSingleRecordBalanceImpact(newRecord);
+                var net = -oldBalance + newBalance;
+                if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
 
                 await dashboardCacheRepository.InvalidateAsync(userId);
                 return newRecord;
@@ -113,34 +118,35 @@ public class RecordService(
 
         if (installments.HasValue && installments.Value > 1)
         {
-            var revertOld = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
+            var oldBalance = CalculateSingleRecordBalanceImpact(record);
             await repository.DeleteRecordAsync(recordId);
 
             updateRecordRequest.Tags = tags;
             updateRecordRequest.User = new User { Id = userId };
             var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
 
-            var newTotalBalance = newRecords.Sum(r => r.CalculateBalanceImpact());
-            var netAmount = revertOld + newTotalBalance;
-            await userRepository.UpdateBalanceAsync(userId, netAmount);
+            var newBalance = CalculateBalanceImpactByDate(newRecords);
+            var net = -oldBalance + newBalance;
+            if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
 
             await dashboardCacheRepository.InvalidateAsync(userId);
             return newRecords.First();
         }
 
-        var revertOldBalance = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
-        var applyNew = updateRecordRequest.CalculateBalanceImpact();
-        var balanceNet = revertOldBalance + applyNew;
+        var revertOld = CalculateSingleRecordBalanceImpact(record);
 
         record.Name = updateRecordRequest.Name;
         record.Operation = updateRecordRequest.Operation;
         record.Value = updateRecordRequest.Value;
         record.Frequency = updateRecordRequest.Frequency;
         record.ReferenceDate = updateRecordRequest.ReferenceDate ?? record.ReferenceDate;
+        record.RecurrenceEndDate = updateRecordRequest.RecurrenceEndDate;
         record.Tags = tags;
         await repository.UpdateRecordAsync(record);
 
-        await userRepository.UpdateBalanceAsync(userId, balanceNet);
+        var applyNew = CalculateSingleRecordBalanceImpact(record);
+        var balanceNet = -revertOld + applyNew;
+        if (balanceNet != 0) await userRepository.UpdateBalanceAsync(userId, balanceNet);
 
         await dashboardCacheRepository.InvalidateAsync(userId);
 
@@ -154,21 +160,48 @@ public class RecordService(
         if (record.InstallmentGroupId != null)
         {
             var groupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            var totalRevert = groupRecords.Sum(r =>
-                r.Operation == Domain.Enums.OperationEnum.Deposit ? -r.Value : r.Value);
+            var totalRevert = CalculateBalanceImpactByDate(groupRecords);
 
             await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            await userRepository.UpdateBalanceAsync(userId, totalRevert);
+            if (totalRevert != 0) await userRepository.UpdateBalanceAsync(userId, -totalRevert);
         }
         else
         {
+            var revertAmount = CalculateSingleRecordBalanceImpact(record);
             await repository.DeleteRecordAsync(recordId);
-
-            var revertAmount = record.Operation == Domain.Enums.OperationEnum.Deposit ? -record.Value : record.Value;
-            await userRepository.UpdateBalanceAsync(userId, revertAmount);
+            if (revertAmount != 0) await userRepository.UpdateBalanceAsync(userId, -revertAmount);
         }
 
         await dashboardCacheRepository.InvalidateAsync(userId);
+    }
+
+    private static decimal CalculateSingleRecordBalanceImpact(Record record)
+    {
+        var now = DateTime.UtcNow;
+
+        if (record.IsRecurring)
+        {
+            var occurrences = RecurrenceHelper.CountOccurrencesUpTo(record, now);
+            return occurrences * record.CalculateBalanceImpact();
+        }
+
+        var refDate = record.ReferenceDate ?? record.CreatedAt ?? now;
+        if (refDate > now)
+            return 0;
+
+        return record.CalculateBalanceImpact();
+    }
+
+    private static decimal CalculateBalanceImpactByDate(List<Record> records)
+    {
+        var now = DateTime.UtcNow;
+        return records
+            .Where(r =>
+            {
+                var refDate = r.ReferenceDate ?? r.CreatedAt ?? now;
+                return refDate <= now;
+            })
+            .Sum(r => r.CalculateBalanceImpact());
     }
 
     private async Task<List<Record>> CreateInstallmentRecordsAsync(Record baseRecord, int installmentCount)

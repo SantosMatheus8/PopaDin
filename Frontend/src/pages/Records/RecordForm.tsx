@@ -54,6 +54,7 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
           tagIds: record.tags.map((t) => t.id).filter((id): id is number => id !== null),
           referenceDate: record.referenceDate ? record.referenceDate.slice(0, 10) : today,
           installments: hasInstallment ? record.installmentTotal! : undefined,
+          recurrenceEndDate: record.recurrenceEndDate ? record.recurrenceEndDate.slice(0, 10) : undefined,
         });
       } else {
         setIsInstallment(false);
@@ -63,7 +64,17 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
   }, [isOpen, record, reset, today]);
 
   const selectedTags = watch("tagIds");
+  const selectedFrequency = watch("frequency");
   const tags = tagsData?.lines ?? [];
+  const canInstallment = Number(selectedFrequency) === FrequencyEnum.OneTime;
+
+  // Reset installment if frequency changed to non-OneTime
+  useEffect(() => {
+    if (!canInstallment && isInstallment) {
+      setIsInstallment(false);
+      setValue("installments", undefined);
+    }
+  }, [canInstallment, isInstallment, setValue]);
 
   const handleTagToggle = (tagId: number) => {
     const current = selectedTags || [];
@@ -89,6 +100,7 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
       ...data,
       referenceDate: data.referenceDate || undefined,
       installments: isInstallment ? data.installments : undefined,
+      recurrenceEndDate: undefined,
     };
     await onSubmit(submitData);
     reset();
@@ -146,29 +158,31 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
           {...register("referenceDate")}
         />
 
-        {/* Installment toggle */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isInstallment}
-              onChange={handleInstallmentToggle}
-              className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Parcelar</span>
-          </label>
-          {isInstallment && (
-            <Input
-              label="Número de parcelas"
-              type="number"
-              min={2}
-              max={48}
-              placeholder="2"
-              error={errors.installments?.message}
-              {...register("installments", { valueAsNumber: true })}
-            />
-          )}
-        </div>
+        {/* Installment toggle - only for OneTime frequency */}
+        {canInstallment && (
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isInstallment}
+                onChange={handleInstallmentToggle}
+                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Parcelar</span>
+            </label>
+            {isInstallment && (
+              <Input
+                label="Número de parcelas"
+                type="number"
+                min={2}
+                max={48}
+                placeholder="2"
+                error={errors.installments?.message}
+                {...register("installments", { valueAsNumber: true })}
+              />
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Tags</label>
