@@ -38,11 +38,10 @@ function getMonthOptions() {
 
 function parsePeriod(period: string) {
   const [year, month] = period.split("-").map(Number);
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0, 23, 59, 59);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
   return {
-    startDate: startDate.toISOString().slice(0, 10),
-    endDate: endDate.toISOString().slice(0, 10),
+    startDate: `${year}-${String(month).padStart(2, "0")}-01`,
+    endDate: `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
   };
 }
 
