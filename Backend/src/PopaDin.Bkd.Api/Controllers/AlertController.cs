@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Alert;
+using PopaDin.Bkd.Api.Extensions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
@@ -20,7 +19,7 @@ public class AlertController(IAlertService alertService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<ActionResult<AlertResponse>> CreateAlert([FromBody] CreateAlertRequest createAlertRequest)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         var alert = createAlertRequest.Adapt<Alert>();
         Alert alertCreated = await alertService.CreateAlertAsync(alert, userId);
         var alertResponse = alertCreated.Adapt<AlertResponse>();
@@ -31,7 +30,7 @@ public class AlertController(IAlertService alertService) : ControllerBase
     [ProducesResponseType(typeof(List<AlertResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<AlertResponse>>> GetAlerts()
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         List<Alert> alerts = await alertService.GetAlertsByUserIdAsync(userId);
         var alertsResponse = alerts.Adapt<List<AlertResponse>>();
         return Ok(alertsResponse);
@@ -42,7 +41,7 @@ public class AlertController(IAlertService alertService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> ToggleAlert([FromRoute] string id, [FromBody] ToggleAlertRequest toggleAlertRequest)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         await alertService.ToggleAlertAsync(id, toggleAlertRequest.Active, userId);
         return NoContent();
     }
@@ -52,7 +51,7 @@ public class AlertController(IAlertService alertService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteAlert([FromRoute] string id)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         await alertService.DeleteAlertAsync(id, userId);
         return NoContent();
     }

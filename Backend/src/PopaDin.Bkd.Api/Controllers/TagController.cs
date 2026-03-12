@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Tag;
+using PopaDin.Bkd.Api.Extensions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
@@ -19,7 +18,7 @@ public class TagController(ITagService tagService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TagResponse>> CreateTag([FromBody] CreateTagRequest createTagRequest)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         var tag = createTagRequest.Adapt<Tag>();
         Tag tagCreated = await tagService.CreateTagAsync(tag, userId);
         var tagResponse = tagCreated.Adapt<TagResponse>();
@@ -31,7 +30,7 @@ public class TagController(ITagService tagService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResult<TagResponse>>> GetTags([FromQuery] ListTagsRequest listTagsRequest)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         var listTags = listTagsRequest.Adapt<ListTags>();
         PaginatedResult<Tag> tags = await tagService.GetTagsAsync(listTags, userId);
         var tagsResponse = tags.Adapt<PaginatedResult<TagResponse>>();
@@ -43,7 +42,7 @@ public class TagController(ITagService tagService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TagResponse>> FindTagById([FromRoute] int tagId)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         Tag tag = await tagService.FindTagByIdAsync(tagId, userId);
         var tagResponse = tag.Adapt<TagResponse>();
         return Ok(tagResponse);
@@ -55,7 +54,7 @@ public class TagController(ITagService tagService) : ControllerBase
     public async Task<ActionResult<TagResponse>> UpdateTag([FromBody] UpdateTagRequest updateTagRequest,
         [FromRoute] int tagId)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         var tag = updateTagRequest.Adapt<Tag>();
         Tag updatedTag = await tagService.UpdateTagAsync(tag, tagId, userId);
         var tagResponse = updatedTag.Adapt<TagResponse>();
@@ -67,7 +66,7 @@ public class TagController(ITagService tagService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteTag([FromRoute] int tagId)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         await tagService.DeleteTagAsync(tagId, userId);
         return NoContent();
     }

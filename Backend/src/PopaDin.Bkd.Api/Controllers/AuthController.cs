@@ -1,9 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Auth;
 using PopaDin.Bkd.Api.Dtos.User;
+using PopaDin.Bkd.Api.Extensions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 
 namespace PopaDin.Bkd.Api.Controllers;
@@ -30,7 +30,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> GetProfile()
     {
-        var userId = int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var userId = User.GetUserId();
         var user = await authService.GetProfile(userId);
         var userResponse = user.Adapt<UserResponse>();
         return Ok(userResponse);

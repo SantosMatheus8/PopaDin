@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PopaDin.Bkd.Api.Dtos.Dashboard;
+using PopaDin.Bkd.Api.Extensions;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using Mapster;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace PopaDin.Bkd.Api.Controllers;
 
@@ -18,7 +17,7 @@ public class DashboardController(IDashboardService dashboardService) : Controlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<DashboardResponse>> GetDashboard([FromQuery] DashboardRequest request)
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var userId = User.GetUserId();
         var dashboard = await dashboardService.GetDashboardAsync(userId, request.StartDate, request.EndDate);
         var response = dashboard.Adapt<DashboardResponse>();
         return Ok(response);
