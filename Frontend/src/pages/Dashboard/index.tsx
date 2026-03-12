@@ -174,39 +174,38 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-400">Nenhum orçamento ativo.</p>
           ) : (
             <div className="space-y-3">
-              {activeBudgets.map((budget) => (
-                <div key={budget.id} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{budget.name}</span>
-                    <Badge
-                      variant={
-                        budget.status === "exceeded"
-                          ? "success"   
-                          : budget.status === "alert"
-                          ? "warning"
-                          : "error"    
-                      }
-                    >
-                      {budget.usedPercentage}%
-                    </Badge>
+              {activeBudgets.map((budget) => {
+                const pct = budget.usedPercentage;
+                const barWidth = Math.max(0, Math.min(pct, 100));
+                const barColor =
+                  pct >= 100 ? "bg-green-500"
+                    : pct >= 80 ? "bg-emerald-400"
+                    : pct >= 50 ? "bg-amber-400"
+                    : pct >= 25 ? "bg-orange-400"
+                    : "bg-red-500";
+                const badgeVariant =
+                  pct >= 100 ? "success" : pct >= 80 ? "warning" : "error";
+
+                return (
+                  <div key={budget.id} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{budget.name}</span>
+                      <Badge variant={badgeVariant}>
+                        {pct}%
+                      </Badge>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className={`h-full rounded-full transition-all ${barColor}`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      {formatCurrency(budget.totalSpent)} / {formatCurrency(budget.goal)}
+                    </p>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        budget.status === "exceeded"
-                          ? "bg-green-500"
-                          : budget.status === "alert"
-                          ? "bg-amber-500"
-                          : "bg-red-500"  
-                      }`}
-                      style={{ width: `${Math.min(budget.usedPercentage, 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    {formatCurrency(budget.totalSpent)} / {formatCurrency(budget.goal)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>

@@ -11,7 +11,6 @@ import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { AlertForm } from "./AlertForm";
 import { formatCurrency } from "../../lib/format";
-import { AlertTypeLabels, AlertType } from "../../types/enums";
 import type { AlertResponse } from "../../types";
 import type { AlertFormData } from "../../schemas/alert";
 
@@ -90,9 +89,13 @@ export default function AlertsPage() {
                   <Badge variant={alert.active ? "success" : "default"}>
                     {alert.active ? "Ativo" : "Inativo"}
                   </Badge>
-                  <p className="text-sm font-medium text-gray-900">
-                    {AlertTypeLabels[alert.type as AlertType] || `Tipo ${alert.type}`}
-                  </p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {alert.type === "BUDGET_ABOVE"
+                        ? "Alerta para orçamento acima de"
+                        : alert.type === "BALANCE_BELOW"
+                          ? "Alerta para saldo abaixo de"
+                          : `Tipo ${alert.type}`}
+                    </p>
                   <p className="text-lg font-bold text-primary-700">
                     {formatCurrency(alert.threshold)}
                   </p>

@@ -13,4 +13,5 @@ public interface IRecordRepository
     Task DeleteManyByInstallmentGroupAsync(string installmentGroupId, int userId);
     Task<List<Record>> FindByInstallmentGroupAsync(string installmentGroupId, int userId);
     Task<List<Record>> GetRecurringRecordsAsync(int userId);
+    Task<List<Record>> GetNonRecurringByPeriodAsync(int userId, DateTime startDate, DateTime endDate);
 }

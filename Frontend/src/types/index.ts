@@ -190,7 +190,7 @@ export interface ListBudgetsRequest extends PaginationParams {
 export interface AlertResponse {
   id: string;
   userId: number;
-  type: number;
+  type: string;
   threshold: number;
   channel: string;
   active: boolean;

@@ -146,6 +146,30 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         return documents.Select(MapToRecord).ToList();
     }
 
+    public async Task<List<Record>> GetNonRecurringByPeriodAsync(int userId, DateTime startDate, DateTime endDate)
+    {
+        logger.LogInformation("Buscando Records não-recorrentes do usuário {UserId} entre {Start} e {End}",
+            userId, startDate, endDate);
+
+        var builder = Builders<RecordDocument>.Filter;
+        var nonRecurring = builder.Or(
+            builder.Eq(r => r.Frequency, (int)FrequencyEnum.OneTime),
+            builder.And(
+                builder.Ne(r => r.InstallmentGroupId, (string?)null),
+                builder.Exists(r => r.InstallmentGroupId, true)
+            )
+        );
+
+        var filter = builder.Eq(r => r.UserId, userId)
+                     & builder.Gt(r => r.ReferenceDate, startDate)
+                     & builder.Lte(r => r.ReferenceDate, endDate)
+                     & nonRecurring;
+
+        var documents = await Collection.Find(filter).ToListAsync();
+
+        return documents.Select(MapToRecord).ToList();
+    }
+
     private static FilterDefinition<RecordDocument> BuildFilter(ListRecords listRecords)
     {
         var builder = Builders<RecordDocument>.Filter;

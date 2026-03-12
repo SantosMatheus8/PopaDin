@@ -109,22 +109,19 @@ public class DashboardService(
             dashboard.TopOutflows = allTopOutflows;
         }
 
-        // Calculate balance: for future periods, project cumulative recurring impact
         var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var isFuturePeriod = resolvedStart > currentMonthStart;
 
         if (isFuturePeriod)
         {
-            // Projected balance = current balance + cumulative impact of all recurring
-            // records from now through the end of the viewed period
-            var cumulativeProjected = recurringRecords
+            var cumulativeRecurringImpact = recurringRecords
                 .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, now, resolvedEnd))
-                .ToList();
-
-            var cumulativeImpact = cumulativeProjected
                 .Sum(r => r.CalculateBalanceImpact());
 
-            dashboard.Summary.Balance = user.Balance + cumulativeImpact;
+            var futureNonRecurring = await recordRepository.GetNonRecurringByPeriodAsync(userId, now, resolvedEnd);
+            var futureNonRecurringImpact = futureNonRecurring.Sum(r => r.CalculateBalanceImpact());
+
+            dashboard.Summary.Balance = user.Balance + cumulativeRecurringImpact + futureNonRecurringImpact;
         }
         else
         {
