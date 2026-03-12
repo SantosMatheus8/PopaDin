@@ -1,6 +1,7 @@
 using MongoDB.Driver;
 using PopaDin.ExportService.Documents;
 using PopaDin.ExportService.Interfaces;
+using PopaDin.ExportService.Models;
 
 namespace PopaDin.ExportService.Services;
 
@@ -17,7 +18,7 @@ public class RecordQueryService(IMongoDatabase database, ILogger<RecordQueryServ
         var builder = Builders<RecordDocument>.Filter;
 
         var notRecurring = builder.Or(
-            builder.Eq(r => r.Frequency, 5),
+            builder.Eq(r => r.Frequency, FrequencyType.OneTime),
             builder.And(
                 builder.Ne(r => r.InstallmentGroupId, (string?)null),
                 builder.Exists(r => r.InstallmentGroupId, true)
@@ -34,7 +35,7 @@ public class RecordQueryService(IMongoDatabase database, ILogger<RecordQueryServ
         var records = await Collection.Find(filter).Sort(sort).ToListAsync();
 
         var recurringFilter = builder.Eq(r => r.UserId, userId)
-                              & builder.Ne(r => r.Frequency, 5)
+                              & builder.Ne(r => r.Frequency, FrequencyType.OneTime)
                               & builder.Or(
                                   builder.Eq(r => r.InstallmentGroupId, (string?)null),
                                   builder.Exists(r => r.InstallmentGroupId, false)
@@ -57,7 +58,7 @@ public class RecordQueryService(IMongoDatabase database, ILogger<RecordQueryServ
 
     private static List<RecordDocument> ProjectRecordOccurrences(RecordDocument record, DateTime periodStart, DateTime periodEnd)
     {
-        var interval = GetMonthInterval(record.Frequency);
+        var interval = FrequencyType.GetMonthInterval(record.Frequency);
         if (interval == 0) return [];
 
         var baseDate = record.ReferenceDate ?? record.CreatedAt;
@@ -106,13 +107,4 @@ public class RecordQueryService(IMongoDatabase database, ILogger<RecordQueryServ
         return results;
     }
 
-    private static int GetMonthInterval(int frequency) => frequency switch
-    {
-        0 => 1,  // Monthly
-        1 => 2,  // Bimonthly
-        2 => 3,  // Quarterly
-        3 => 6,  // Semiannual
-        4 => 12, // Annual
-        _ => 0
-    };
 }

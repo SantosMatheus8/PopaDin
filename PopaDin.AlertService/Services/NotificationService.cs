@@ -1,6 +1,4 @@
 using System.Text.RegularExpressions;
-using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MimeKit;
@@ -9,14 +7,16 @@ using PopaDin.AlertService.Models;
 
 namespace PopaDin.AlertService.Services;
 
-public partial class NotificationService(IConfiguration configuration, ILogger<NotificationService> logger) : INotificationService
+public partial class NotificationService(
+    IConfiguration configuration,
+    IEmailSender emailSender,
+    ILogger<NotificationService> logger) : INotificationService
 {
     [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
     private static partial Regex EmailRegex();
 
     public async Task SendAlertNotificationAsync(AlertRule rule, RecordCreatedEvent recordEvent)
     {
-
         if (!EmailRegex().IsMatch(rule.Channel))
         {
             logger.LogWarning("Canal '{Channel}' do alerta {AlertId} não é um email válido, ignorando envio",
@@ -37,21 +37,7 @@ public partial class NotificationService(IConfiguration configuration, ILogger<N
         var body = BuildEmailBody(rule, recordEvent);
         message.Body = new TextPart("html") { Text = body };
 
-        using var client = new SmtpClient();
-
-        await client.ConnectAsync(
-            configuration["SmtpSettings:Host"],
-            int.Parse(configuration["SmtpSettings:Port"]!),
-            SecureSocketOptions.StartTls
-        );
-
-        await client.AuthenticateAsync(
-            configuration["SmtpSettings:Username"],
-            configuration["SmtpSettings:Password"]
-        );
-
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+        await emailSender.SendAsync(message);
 
         logger.LogInformation("Notificação enviada com sucesso para: {Channel}", rule.Channel);
     }
@@ -60,7 +46,7 @@ public partial class NotificationService(IConfiguration configuration, ILogger<N
     {
         return rule.Type switch
         {
-            "BALANCE_BELOW" =>
+            nameof(AlertRuleType.BALANCE_BELOW) =>
                 $"""
                 <h2>Alerta: Saldo Abaixo do Limite</h2>
                 <p>Uma movimentação foi registrada e seu saldo ficou abaixo do limite configurado.</p>
@@ -71,15 +57,15 @@ public partial class NotificationService(IConfiguration configuration, ILogger<N
                     <li><strong>Limite Configurado:</strong> R$ {rule.Threshold:F2}</li>
                 </ul>
                 """,
-            "BUDGET_ABOVE" =>
+            nameof(AlertRuleType.BUDGET_ABOVE) =>
                 $"""
-                <h2>Alerta: Saldo Acima do Limite</h2>
-                <p>Uma movimentação foi registrada e seu saldo ultrapassou o limite configurado.</p>
+                <h2>Alerta: Gastos Acima do Orçamento</h2>
+                <p>Seus gastos mensais ultrapassaram o limite configurado.</p>
                 <ul>
                     <li><strong>Operação:</strong> {recordEvent.Operation}</li>
                     <li><strong>Valor:</strong> R$ {recordEvent.Value:F2}</li>
-                    <li><strong>Saldo Atual:</strong> R$ {recordEvent.NewBalance:F2}</li>
-                    <li><strong>Limite Configurado:</strong> R$ {rule.Threshold:F2}</li>
+                    <li><strong>Gastos do Mês:</strong> R$ {recordEvent.MonthlyExpenses:F2}</li>
+                    <li><strong>Limite de Orçamento:</strong> R$ {rule.Threshold:F2}</li>
                 </ul>
                 """,
             _ =>

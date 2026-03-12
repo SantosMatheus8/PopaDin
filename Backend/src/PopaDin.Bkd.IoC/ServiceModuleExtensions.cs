@@ -78,13 +78,19 @@ public static class ServiceModuleExtensions
             return containerClient;
         });
 
+        // TimeProvider
+        services.AddSingleton(TimeProvider.System);
+
         // Services
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IRecordService, RecordService>();
+        services.AddScoped<IBalanceService, BalanceService>();
+        services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IDashboardService, DashboardService>();
 
         // Repositories

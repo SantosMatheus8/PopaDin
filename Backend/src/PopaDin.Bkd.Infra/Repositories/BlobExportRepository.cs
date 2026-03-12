@@ -17,13 +17,12 @@ public class BlobExportRepository(BlobContainerClient containerClient, ILogger<B
 
         await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: prefix))
         {
-            var blobClient = containerClient.GetBlobClient(blobItem.Name);
             var fileName = blobItem.Name.Replace(prefix, "");
 
             exports.Add(new ExportFile
             {
                 Name = fileName,
-                Url = blobClient.Uri.ToString(),
+                Url = $"/v1/record/export/files/{fileName}",
                 Size = blobItem.Properties.ContentLength ?? 0,
                 CreatedAt = blobItem.Properties.CreatedOn?.UtcDateTime
             });

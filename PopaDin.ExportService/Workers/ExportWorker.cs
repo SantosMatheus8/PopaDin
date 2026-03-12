@@ -61,10 +61,10 @@ public class ExportWorker(
             logger.LogInformation("Gerando PDF para o usuário {UserId} com {Count} Records",
                 exportRequest.UserId, records.Count);
 
-            var pdfContent = pdfGeneratorService.GenerateRecordsReport(
+            using var pdfStream = pdfGeneratorService.GenerateRecordsReportStream(
                 records, exportRequest.StartDate, exportRequest.EndDate);
 
-            var blobUri = await blobStorageService.UploadPdfAsync(pdfContent, exportRequest.UserId);
+            var blobUri = await blobStorageService.UploadPdfStreamAsync(pdfStream, exportRequest.UserId);
 
             logger.LogInformation("PDF exportado com sucesso para o usuário {UserId}: {BlobUri}",
                 exportRequest.UserId, blobUri);

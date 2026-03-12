@@ -8,6 +8,12 @@ public class BlobStorageService(BlobContainerClient containerClient, ILogger<Blo
 {
     public async Task<string> UploadPdfAsync(byte[] pdfContent, int userId)
     {
+        using var stream = new MemoryStream(pdfContent);
+        return await UploadPdfStreamAsync(stream, userId);
+    }
+
+    public async Task<string> UploadPdfStreamAsync(Stream pdfStream, int userId)
+    {
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         var blobName = $"{userId}/export_{timestamp}.pdf";
 
@@ -15,8 +21,7 @@ public class BlobStorageService(BlobContainerClient containerClient, ILogger<Blo
 
         var blobClient = containerClient.GetBlobClient(blobName);
 
-        using var stream = new MemoryStream(pdfContent);
-        await blobClient.UploadAsync(stream, new BlobHttpHeaders
+        await blobClient.UploadAsync(pdfStream, new BlobHttpHeaders
         {
             ContentType = "application/pdf"
         });

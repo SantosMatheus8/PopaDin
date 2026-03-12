@@ -14,7 +14,10 @@ public class RecordService(
     ITagCacheRepository tagCacheRepository,
     IDashboardCacheRepository dashboardCacheRepository,
     IUserRepository userRepository,
+    IBalanceService balanceService,
+    IInstallmentService installmentService,
     IRecordEventPublisher recordEventPublisher,
+    TimeProvider timeProvider,
     ILogger<RecordService> logger) : IRecordService
 {
     public async Task<Record> CreateRecordAsync(Record record, List<int> tagIds, int userId, int? installments = null)
@@ -30,35 +33,42 @@ public class RecordService(
 
         if (installments.HasValue && installments.Value > 1)
         {
-            var createdRecords = await CreateInstallmentRecordsAsync(record, installments.Value);
+            var createdRecords = await installmentService.CreateInstallmentRecordsAsync(record, installments.Value);
             var firstRecord = createdRecords.First();
 
-            var balanceImpact = CalculateBalanceImpactByDate(createdRecords);
-            if (balanceImpact != 0)
-                await userRepository.UpdateBalanceAsync(userId, balanceImpact);
+            await balanceService.UpdateBalanceForNewRecordsAsync(userId, createdRecords);
 
             var user = await userRepository.FindUserByIdAsync(userId);
+            var monthlyExpenses = await CalculateCurrentMonthExpensesAsync(userId);
             await recordEventPublisher.PublishRecordCreatedAsync(
-                userId, record.Value, record.Operation, user.Balance);
+                userId, record.Value, record.Operation, user.Balance, monthlyExpenses);
 
             await dashboardCacheRepository.InvalidateAsync(userId);
 
             return firstRecord;
         }
 
-        var recordCreated = await repository.CreateRecordAsync(record);
-
-        var singleBalanceImpact = CalculateSingleRecordBalanceImpact(recordCreated);
-        if (singleBalanceImpact != 0)
-            await userRepository.UpdateBalanceAsync(userId, singleBalanceImpact);
+        Record? recordCreated = null;
+        try
+        {
+            recordCreated = await repository.CreateRecordAsync(record);
+            await balanceService.UpdateBalanceForNewRecordAsync(userId, recordCreated);
+        }
+        catch (Exception) when (recordCreated != null)
+        {
+            logger.LogWarning("Falha ao atualizar saldo. Revertendo criação do Record {RecordId}", recordCreated.Id);
+            await repository.DeleteRecordAsync(recordCreated.Id!);
+            throw;
+        }
 
         var userAfter = await userRepository.FindUserByIdAsync(userId);
+        var currentMonthExpenses = await CalculateCurrentMonthExpensesAsync(userId);
         await recordEventPublisher.PublishRecordCreatedAsync(
-            userId, record.Value, record.Operation, userAfter.Balance);
+            userId, record.Value, record.Operation, userAfter.Balance, currentMonthExpenses);
 
         await dashboardCacheRepository.InvalidateAsync(userId);
 
-        return recordCreated;
+        return recordCreated!;
     }
 
     public async Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, int userId)
@@ -84,19 +94,16 @@ public class RecordService(
         if (record.InstallmentGroupId != null)
         {
             var oldGroupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            var oldBalance = CalculateBalanceImpactByDate(oldGroupRecords);
-
             await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
 
             if (installments.HasValue && installments.Value > 1)
             {
                 updateRecordRequest.Tags = tags;
                 updateRecordRequest.User = new User { Id = userId };
-                var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
+                var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
 
-                var newBalance = CalculateBalanceImpactByDate(newRecords);
-                var net = -oldBalance + newBalance;
-                if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
+                await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
+                await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
 
                 await dashboardCacheRepository.InvalidateAsync(userId);
                 return newRecords.First();
@@ -107,9 +114,8 @@ public class RecordService(
                 updateRecordRequest.User = new User { Id = userId };
                 var newRecord = await repository.CreateRecordAsync(updateRecordRequest);
 
-                var newBalance = CalculateSingleRecordBalanceImpact(newRecord);
-                var net = -oldBalance + newBalance;
-                if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
+                await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
+                await balanceService.UpdateBalanceForNewRecordAsync(userId, newRecord);
 
                 await dashboardCacheRepository.InvalidateAsync(userId);
                 return newRecord;
@@ -118,22 +124,20 @@ public class RecordService(
 
         if (installments.HasValue && installments.Value > 1)
         {
-            var oldBalance = CalculateSingleRecordBalanceImpact(record);
+            await balanceService.RevertBalanceForRecordAsync(userId, record);
             await repository.DeleteRecordAsync(recordId);
 
             updateRecordRequest.Tags = tags;
             updateRecordRequest.User = new User { Id = userId };
-            var newRecords = await CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
+            var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
 
-            var newBalance = CalculateBalanceImpactByDate(newRecords);
-            var net = -oldBalance + newBalance;
-            if (net != 0) await userRepository.UpdateBalanceAsync(userId, net);
+            await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
 
             await dashboardCacheRepository.InvalidateAsync(userId);
             return newRecords.First();
         }
 
-        var revertOld = CalculateSingleRecordBalanceImpact(record);
+        await balanceService.RevertBalanceForRecordAsync(userId, record);
 
         record.Name = updateRecordRequest.Name;
         record.Operation = updateRecordRequest.Operation;
@@ -144,9 +148,7 @@ public class RecordService(
         record.Tags = tags;
         await repository.UpdateRecordAsync(record);
 
-        var applyNew = CalculateSingleRecordBalanceImpact(record);
-        var balanceNet = -revertOld + applyNew;
-        if (balanceNet != 0) await userRepository.UpdateBalanceAsync(userId, balanceNet);
+        await balanceService.UpdateBalanceForNewRecordAsync(userId, record);
 
         await dashboardCacheRepository.InvalidateAsync(userId);
 
@@ -160,76 +162,16 @@ public class RecordService(
         if (record.InstallmentGroupId != null)
         {
             var groupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            var totalRevert = CalculateBalanceImpactByDate(groupRecords);
-
             await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            if (totalRevert != 0) await userRepository.UpdateBalanceAsync(userId, -totalRevert);
+            await balanceService.RevertBalanceForRecordsAsync(userId, groupRecords);
         }
         else
         {
-            var revertAmount = CalculateSingleRecordBalanceImpact(record);
             await repository.DeleteRecordAsync(recordId);
-            if (revertAmount != 0) await userRepository.UpdateBalanceAsync(userId, -revertAmount);
+            await balanceService.RevertBalanceForRecordAsync(userId, record);
         }
 
         await dashboardCacheRepository.InvalidateAsync(userId);
-    }
-
-    private static decimal CalculateSingleRecordBalanceImpact(Record record)
-    {
-        var now = DateTime.UtcNow;
-
-        if (record.IsRecurring)
-        {
-            var occurrences = RecurrenceHelper.CountOccurrencesUpTo(record, now);
-            return occurrences * record.CalculateBalanceImpact();
-        }
-
-        var refDate = record.ReferenceDate ?? record.CreatedAt ?? now;
-        if (refDate > now)
-            return 0;
-
-        return record.CalculateBalanceImpact();
-    }
-
-    private static decimal CalculateBalanceImpactByDate(List<Record> records)
-    {
-        var now = DateTime.UtcNow;
-        return records
-            .Where(r =>
-            {
-                var refDate = r.ReferenceDate ?? r.CreatedAt ?? now;
-                return refDate <= now;
-            })
-            .Sum(r => r.CalculateBalanceImpact());
-    }
-
-    private async Task<List<Record>> CreateInstallmentRecordsAsync(Record baseRecord, int installmentCount)
-    {
-        var groupId = Guid.NewGuid().ToString("N");
-        var installmentValue = Math.Round(baseRecord.Value / installmentCount, 2);
-        var baseDate = baseRecord.ReferenceDate ?? DateTime.UtcNow;
-
-        var records = new List<Record>();
-
-        for (int i = 0; i < installmentCount; i++)
-        {
-            records.Add(new Record
-            {
-                Name = baseRecord.Name,
-                Operation = baseRecord.Operation,
-                Value = installmentValue,
-                Frequency = baseRecord.Frequency,
-                ReferenceDate = baseDate.AddMonths(i),
-                Tags = baseRecord.Tags,
-                User = baseRecord.User,
-                InstallmentGroupId = groupId,
-                InstallmentIndex = i + 1,
-                InstallmentTotal = installmentCount
-            });
-        }
-
-        return await repository.CreateManyRecordsAsync(records);
     }
 
     private async Task<List<Tag>> GetValidatedTagsAsync(List<int> tagIds, int userId)
@@ -257,6 +199,28 @@ public class RecordService(
         await tagCacheRepository.SetUserTagsAsync(userId, allTags);
 
         return allTags;
+    }
+
+    private async Task<decimal> CalculateCurrentMonthExpensesAsync(int userId)
+    {
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var monthEnd = monthStart.AddMonths(1).AddTicks(-1);
+
+        var nonRecurring = await repository.GetNonRecurringByPeriodAsync(userId, monthStart, monthEnd);
+        var recurring = await repository.GetRecurringRecordsAsync(userId);
+
+        var expenses = nonRecurring
+            .Where(r => r.Operation == OperationEnum.Outflow)
+            .Sum(r => r.Value);
+
+        foreach (var record in recurring.Where(r => r.Operation == OperationEnum.Outflow))
+        {
+            var occurrences = RecurrenceHelper.ProjectOccurrences(record, monthStart, monthEnd);
+            expenses += occurrences.Count * record.Value;
+        }
+
+        return expenses;
     }
 
     private async Task<Record> FindRecordOrThrowAsync(string recordId, int userId)

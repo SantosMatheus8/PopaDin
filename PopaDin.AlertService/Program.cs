@@ -45,6 +45,7 @@ builder.Services.AddSingleton(sp =>
 
 // Services
 builder.Services.AddScoped<IAlertRuleService, AlertRuleService>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Worker

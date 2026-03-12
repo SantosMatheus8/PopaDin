@@ -6,4 +6,5 @@ public class RecordCreatedEvent
     public decimal Value { get; set; }
     public string Operation { get; set; } = "";
     public decimal NewBalance { get; set; }
+    public decimal MonthlyExpenses { get; set; }
 }

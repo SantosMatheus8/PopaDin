@@ -1,5 +1,6 @@
 using PopaDin.ExportService.Documents;
 using PopaDin.ExportService.Interfaces;
+using PopaDin.ExportService.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -8,12 +9,15 @@ namespace PopaDin.ExportService.Services;
 
 public class PdfGeneratorService(ILogger<PdfGeneratorService> logger) : IPdfGeneratorService
 {
+    private const int OperationDeposit = 1;
+    private const int OperationOutflow = 0;
+
     public byte[] GenerateRecordsReport(List<RecordDocument> records, DateTime startDate, DateTime endDate)
     {
         logger.LogInformation("Gerando PDF com {Count} Records", records.Count);
 
-        var totalDeposits = records.Where(r => r.Operation == 1).Sum(r => r.Value);
-        var totalOutflows = records.Where(r => r.Operation == 0).Sum(r => r.Value);
+        var totalDeposits = records.Where(r => r.Operation == OperationDeposit).Sum(r => r.Value);
+        var totalOutflows = records.Where(r => r.Operation == OperationOutflow).Sum(r => r.Value);
         var balance = totalDeposits - totalOutflows;
 
         var document = Document.Create(container =>
@@ -38,6 +42,41 @@ public class PdfGeneratorService(ILogger<PdfGeneratorService> logger) : IPdfGene
         });
 
         return document.GeneratePdf();
+    }
+
+    public Stream GenerateRecordsReportStream(List<RecordDocument> records, DateTime startDate, DateTime endDate)
+    {
+        logger.LogInformation("Gerando PDF stream com {Count} Records", records.Count);
+
+        var totalDeposits = records.Where(r => r.Operation == OperationDeposit).Sum(r => r.Value);
+        var totalOutflows = records.Where(r => r.Operation == OperationOutflow).Sum(r => r.Value);
+        var balance = totalDeposits - totalOutflows;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.MarginHorizontal(40);
+                page.MarginVertical(30);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Element(header => ComposeHeader(header, startDate, endDate));
+                page.Content().Element(content => ComposeContent(content, records, totalDeposits, totalOutflows, balance));
+                page.Footer().AlignCenter().Text(text =>
+                {
+                    text.Span("Página ");
+                    text.CurrentPageNumber();
+                    text.Span(" de ");
+                    text.TotalPages();
+                });
+            });
+        });
+
+        var stream = new MemoryStream();
+        document.GeneratePdf(stream);
+        stream.Position = 0;
+        return stream;
     }
 
     private static void ComposeHeader(IContainer container, DateTime startDate, DateTime endDate)
@@ -129,15 +168,17 @@ public class PdfGeneratorService(ILogger<PdfGeneratorService> logger) : IPdfGene
             });
 
             // Rows
+            var rowIndex = 0;
             foreach (var record in records)
             {
-                var bgColor = records.IndexOf(record) % 2 == 0
+                var bgColor = rowIndex % 2 == 0
                     ? Colors.White
                     : Colors.Grey.Lighten4;
+                rowIndex++;
 
-                var operationType = record.Operation == 1 ? "Receita" : "Despesa";
-                var valueColor = record.Operation == 1 ? Colors.Green.Darken2 : Colors.Red.Darken2;
-                var frequency = GetFrequencyName(record.Frequency);
+                var operationType = record.Operation == OperationDeposit ? "Receita" : "Despesa";
+                var valueColor = record.Operation == OperationDeposit ? Colors.Green.Darken2 : Colors.Red.Darken2;
+                var frequency = FrequencyType.GetDisplayName(record.Frequency);
                 var tags = string.Join(", ", record.Tags.Select(t => t.Name));
 
                 var displayDate = record.ReferenceDate ?? record.CreatedAt;
@@ -154,14 +195,4 @@ public class PdfGeneratorService(ILogger<PdfGeneratorService> logger) : IPdfGene
             }
         });
     }
-
-    private static string GetFrequencyName(int frequency) => frequency switch
-    {
-        0 => "Mensal",
-        1 => "Bimestral",
-        2 => "Trimestral",
-        3 => "Semestral",
-        4 => "Anual",
-        _ => "-"
-    };
 }

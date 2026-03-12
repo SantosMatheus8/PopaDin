@@ -10,14 +10,15 @@ public class ServiceBusRecordEventPublisher(
     ServiceBusSender sender,
     ILogger<ServiceBusRecordEventPublisher> logger) : IRecordEventPublisher
 {
-    public async Task PublishRecordCreatedAsync(int userId, decimal value, OperationEnum operation, decimal newBalance)
+    public async Task PublishRecordCreatedAsync(int userId, decimal value, OperationEnum operation, decimal newBalance, decimal monthlyExpenses)
     {
         var eventPayload = new
         {
             UserId = userId,
             Value = value,
             Operation = operation.ToString(),
-            NewBalance = newBalance
+            NewBalance = newBalance,
+            MonthlyExpenses = monthlyExpenses
         };
 
         var messageBody = JsonSerializer.Serialize(eventPayload);

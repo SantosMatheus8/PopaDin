@@ -14,6 +14,10 @@ public class AlertService(IAlertRepository repository, IUserRepository userRepos
 
         alert.ValidateThreshold();
 
+        var existingAlerts = await repository.GetAlertsByUserIdAsync(userId);
+        if (existingAlerts.Any(a => a.Type == alert.Type && a.Threshold == alert.Threshold))
+            throw new UnprocessableEntityException("Já existe um alerta com este tipo e limite.");
+
         var user = await userRepository.FindUserByIdAsync(userId);
         alert.User = new User { Id = userId };
         alert.Channel = user.Email;
