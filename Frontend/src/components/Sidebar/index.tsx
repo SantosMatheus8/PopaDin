@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { NotificationBell } from "../NotificationBell";
 
 const navItems = [
   { to: "/", label: "Início", icon: Home },
@@ -52,6 +53,10 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      <div className="border-t border-secondary-700 px-3 py-3">
+        <NotificationBell />
+      </div>
 
       <div className="border-t border-secondary-700 p-4">
         <div className="mb-3 truncate text-sm text-gray-400">

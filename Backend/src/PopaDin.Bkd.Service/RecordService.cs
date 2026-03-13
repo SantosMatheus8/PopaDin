@@ -17,6 +17,7 @@ public class RecordService(
     IBalanceService balanceService,
     IInstallmentService installmentService,
     IRecordEventPublisher recordEventPublisher,
+    INotificationEventPublisher notificationEventPublisher,
     TimeProvider timeProvider,
     ILogger<RecordService> logger) : IRecordService
 {
@@ -43,6 +44,11 @@ public class RecordService(
             await recordEventPublisher.PublishRecordCreatedAsync(
                 userId, record.Value, record.Operation, user.Balance, monthlyExpenses);
 
+            await notificationEventPublisher.PublishAsync(
+                userId, "RECORD_CREATED", "Record Criado",
+                $"Record '{record.Name}' criado com sucesso",
+                new { recordId = firstRecord.Id, value = record.Value, operation = record.Operation.ToString() });
+
             await dashboardCacheRepository.InvalidateAsync(userId);
 
             return firstRecord;
@@ -66,9 +72,14 @@ public class RecordService(
         await recordEventPublisher.PublishRecordCreatedAsync(
             userId, record.Value, record.Operation, userAfter.Balance, currentMonthExpenses);
 
+        await notificationEventPublisher.PublishAsync(
+            userId, "RECORD_CREATED", "Record Criado",
+            $"Record '{record.Name}' criado com sucesso",
+            new { recordId = recordCreated!.Id, value = record.Value, operation = record.Operation.ToString() });
+
         await dashboardCacheRepository.InvalidateAsync(userId);
 
-        return recordCreated!;
+        return recordCreated;
     }
 
     public async Task<PaginatedResult<Record>> GetRecordsAsync(ListRecords listRecords, int userId)

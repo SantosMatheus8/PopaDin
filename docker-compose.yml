@@ -100,6 +100,7 @@ services:
       - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
       - ServiceBusSettings__QueueName=record-events
       - ServiceBusSettings__ExportQueueName=pdf-relatorios
+      - ServiceBusSettings__NotificationsQueueName=notifications
       - BlobStorageSettings__ConnectionString=${BLOB_STORAGE_CONNECTION_STRING}
       - BlobStorageSettings__ContainerName=pdf-exports
       - AppSettings__Secret=${JWT_SECRET}
@@ -117,6 +118,7 @@ services:
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
       - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
       - ServiceBusSettings__QueueName=record-events
+      - ServiceBusSettings__NotificationsQueueName=notifications
       - MongoDbSettings__ConnectionString=mongodb://mongodb-popa:27017
       - MongoDbSettings__DatabaseName=popadin
       - SmtpSettings__Host=${SMTP_HOST}
@@ -139,10 +141,29 @@ services:
       - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
       - ServiceBusSettings__ConnectionString=${SERVICEBUS_CONNECTION_STRING}
       - ServiceBusSettings__QueueName=pdf-relatorios
+      - ServiceBusSettings__NotificationsQueueName=notifications
       - MongoDbSettings__ConnectionString=mongodb://mongodb-popa:27017
       - MongoDbSettings__DatabaseName=popadin
       - BlobStorageSettings__ConnectionString=${BLOB_STORAGE_CONNECTION_STRING}
       - BlobStorageSettings__ContainerName=pdf-exports
+    restart: unless-stopped
+
+  popadin-notification-hub:
+    build:
+      context: ./PopaDin.NotificationHub
+      dockerfile: Dockerfile
+    container_name: popadin-notification-hub
+    depends_on:
+      mongodb-popa:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongodb-popa:27017/popadin
+      - SERVICEBUS_CONNECTION_STRING=${SERVICEBUS_CONNECTION_STRING}
+      - SERVICEBUS_QUEUE_NAME=notifications
+      - JWT_SECRET=${JWT_SECRET}
     restart: unless-stopped
 
   popadin-frontend:

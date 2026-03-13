@@ -61,6 +61,7 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddScoped<IRecordQueryService, RecordQueryService>();
 builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<INotificationPublisher, ServiceBusNotificationPublisher>();
 
 // Worker
 builder.Services.AddHostedService<ExportWorker>();

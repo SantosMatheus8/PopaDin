@@ -69,6 +69,15 @@ public class ExportWorker(
             logger.LogInformation("PDF exportado com sucesso para o usuário {UserId}: {BlobUri}",
                 exportRequest.UserId, blobUri);
 
+            var notificationPublisher = scope.ServiceProvider.GetRequiredService<INotificationPublisher>();
+            var fileName = blobUri.Split('/').LastOrDefault() ?? "relatorio.pdf";
+            await notificationPublisher.PublishAsync(
+                exportRequest.UserId,
+                "EXPORT_COMPLETED",
+                "Exportação Concluída",
+                "Seu relatório PDF está pronto para download",
+                new { fileName });
+
             await args.CompleteMessageAsync(args.Message);
         }
         catch (Exception ex)

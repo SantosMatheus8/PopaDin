@@ -206,6 +206,26 @@ export interface ToggleAlertRequest {
   active: boolean;
 }
 
+// --- Notification ---
+export interface NotificationResponse {
+  _id: string;
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  metadata: Record<string, unknown>;
+  read: boolean;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface NotificationListResponse {
+  data: NotificationResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // --- Dashboard ---
 export interface DashboardRequest {
   startDate?: string;

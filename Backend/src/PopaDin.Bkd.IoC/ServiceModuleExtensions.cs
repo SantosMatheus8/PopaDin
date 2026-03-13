@@ -109,5 +109,6 @@ public static class ServiceModuleExtensions
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IRecordEventPublisher, ServiceBusRecordEventPublisher>();
         services.AddScoped<IExportEventPublisher, ServiceBusExportEventPublisher>();
+        services.AddScoped<INotificationEventPublisher, ServiceBusNotificationEventPublisher>();
     }
 }
