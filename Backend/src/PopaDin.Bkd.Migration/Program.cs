@@ -25,13 +25,11 @@ Console.WriteLine();
 
 try
 {
-    // 1. Conectar ao SQL Server
     Console.WriteLine("[1/5] Conectando ao SQL Server...");
     using var sqlConnection = new SqlConnection(sqlConnectionString);
     await sqlConnection.OpenAsync();
     Console.WriteLine("      Conectado ao SQL Server.");
 
-    // 2. Ler todos os Records com Tags via JOIN
     Console.WriteLine("[2/5] Lendo Records com Tags do SQL Server...");
 
     const string query = @"
@@ -55,7 +53,6 @@ try
     var rows = (await sqlConnection.QueryAsync(query)).ToList();
     Console.WriteLine($"      {rows.Count} linhas retornadas (Records + Tags expandidos).");
 
-    // 3. Agrupar por RecordId e transformar em documentos MongoDB
     Console.WriteLine("[3/5] Transformando registros em documentos MongoDB...");
 
     var grouped = rows.GroupBy(r => (int)r.RecordId);
@@ -91,7 +88,6 @@ try
 
     Console.WriteLine($"      {documents.Count} documentos preparados.");
 
-    // 4. Inserir em batch no MongoDB
     Console.WriteLine("[4/5] Inserindo documentos no MongoDB...");
 
     var mongoClient = new MongoClient(mongoConnectionString);
@@ -107,7 +103,6 @@ try
         Console.WriteLine($"      Inseridos {totalInserted}/{documents.Count} documentos...");
     }
 
-    // 5. Validação
     Console.WriteLine("[5/5] Validando migração...");
 
     var sqlCount = await sqlConnection.QuerySingleAsync<int>("SELECT COUNT(*) FROM Record");
@@ -127,7 +122,6 @@ try
         Console.WriteLine("=== AVISO: Contagens divergentes! Verifique os dados. ===");
     }
 
-    // Criar índices recomendados
     Console.WriteLine();
     Console.WriteLine("Criando índices recomendados...");
 
@@ -160,7 +154,6 @@ catch (Exception ex)
     Environment.Exit(1);
 }
 
-// Document classes for migration (self-contained)
 public class RecordMigrationDocument
 {
     [BsonId]

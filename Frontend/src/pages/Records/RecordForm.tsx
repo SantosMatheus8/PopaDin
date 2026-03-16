@@ -68,7 +68,6 @@ export function RecordForm({ isOpen, onClose, onSubmit, record, isLoading }: Rec
   const tags = tagsData?.lines ?? [];
   const canInstallment = Number(selectedFrequency) === FrequencyEnum.OneTime;
 
-  // Reset installment if frequency changed to non-OneTime
   useEffect(() => {
     if (!canInstallment && isInstallment) {
       setIsInstallment(false);

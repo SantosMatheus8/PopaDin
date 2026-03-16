@@ -9,6 +9,7 @@ import {
   Bell,
   User,
   LogOut,
+  Lightbulb,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { NotificationBell } from "../NotificationBell";
@@ -20,6 +21,7 @@ const navItems = [
   { to: "/tags", label: "Tags", icon: Tags },
   { to: "/budgets", label: "Orçamentos", icon: Wallet },
   { to: "/alerts", label: "Alertas", icon: Bell },
+  { to: "/analytics", label: "Insights", icon: Lightbulb },
   { to: "/profile", label: "Perfil", icon: User },
 ];
 

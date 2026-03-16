@@ -47,6 +47,13 @@ const features = [
     description: "Receba notificações quando atingir limites financeiros.",
     color: "bg-red-100 text-red-600",
   },
+  {
+    to: "/analytics",
+    icon: Receipt,
+    title: "Insights Financeiros",
+    description: "Previsões e detalhe sobre gastos e ganhos",
+    color: "bg-amber-200 text-amber-800",
+  },
 ];
 
 export default function HomePage() {

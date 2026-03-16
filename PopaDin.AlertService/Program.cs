@@ -24,7 +24,6 @@ builder.Services.AddSingleton(sp =>
 {
     var rawConnectionString = builder.Configuration["ServiceBusSettings:ConnectionString"] ?? "";
 
-    // Remove EntityPath da connection string para evitar conflito com o QueueName configurado
     var cleanedConnectionString = string.Join(";",
         rawConnectionString.Split(';')
             .Where(part => !part.Trim().StartsWith("EntityPath=", StringComparison.OrdinalIgnoreCase))

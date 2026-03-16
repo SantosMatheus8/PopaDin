@@ -13,6 +13,7 @@ import TagsPage from "./pages/Tags";
 import BudgetsPage from "./pages/Budgets";
 import AlertsPage from "./pages/Alerts";
 import ProfilePage from "./pages/Profile";
+import AnalyticsPage from "./pages/Analytics";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/budgets" element={<BudgetsPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

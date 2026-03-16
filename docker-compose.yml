@@ -166,6 +166,23 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     restart: unless-stopped
 
+  popadin-analytics-service:
+    build:
+      context: ./PopaDin.AnalyticsService
+      dockerfile: Dockerfile
+    container_name: popadin-analytics-service
+    depends_on:
+      mongodb-popa:
+        condition: service_healthy
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGODB_URI=mongodb://mongodb-popa:27017/popadin
+      - JWT_SECRET=${JWT_SECRET}
+      - CRON_SCHEDULE=0 */6 * * *
+    restart: unless-stopped
+
   popadin-frontend:
     build:
       context: ./Frontend

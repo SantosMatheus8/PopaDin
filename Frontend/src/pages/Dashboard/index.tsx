@@ -1,12 +1,19 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import {
   TrendingUp,
   TrendingDown,
   Wallet,
   FileText,
+  Lightbulb,
+  ArrowRight,
+  AlertTriangle,
+  Info,
+  AlertCircle,
 } from "lucide-react";
 import { dashboardService } from "../../services/dashboard";
+import { analyticsService, InsightResponse } from "../../services/analytics";
 import { Card } from "../../components/Card";
 import { Badge } from "../../components/Badge";
 import { EmptyState } from "../../components/EmptyState";
@@ -17,7 +24,6 @@ function getMonthOptions() {
   const options: { value: string; label: string }[] = [];
   const now = new Date();
 
-  // 11 months in the past + current month
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -25,7 +31,6 @@ function getMonthOptions() {
     options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
 
-  // 12 months in the future
   for (let i = 1; i <= 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -63,6 +68,11 @@ export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", selectedPeriod],
     queryFn: () => dashboardService.get({ startDate, endDate }),
+  });
+
+  const { data: latestInsights } = useQuery({
+    queryKey: ["analytics", "latest"],
+    queryFn: () => analyticsService.getLatestInsights(),
   });
 
   if (isLoading) {
@@ -229,6 +239,52 @@ export default function DashboardPage() {
           )}
         </Card>
       </div>
+
+      {/* Insights Financeiros */}
+      {latestInsights && latestInsights.length > 0 && (
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-amber-100 p-2">
+                <Lightbulb className="h-5 w-5 text-amber-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Insights Financeiros</h2>
+            </div>
+            <Link
+              to="/analytics"
+              className="flex items-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
+            >
+              Ver todos
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {latestInsights.slice(0, 4).map((insight: InsightResponse) => {
+              const severityConfig = {
+                info: { icon: Info, bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", iconColor: "text-blue-500" },
+                warning: { icon: AlertTriangle, bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", iconColor: "text-amber-500" },
+                critical: { icon: AlertCircle, bg: "bg-red-50", border: "border-red-200", text: "text-red-700", iconColor: "text-red-500" },
+              };
+              const config = severityConfig[insight.severity];
+              const SeverityIcon = config.icon;
+
+              return (
+                <Link
+                  key={insight._id}
+                  to="/analytics"
+                  className={`flex items-start gap-3 rounded-lg border ${config.border} ${config.bg} p-3 transition-colors hover:opacity-80`}
+                >
+                  <SeverityIcon className={`mt-0.5 h-4 w-4 shrink-0 ${config.iconColor}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium ${config.text}`}>{insight.title}</p>
+                    <p className="truncate text-xs text-gray-600">{insight.message}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Latest Records */}
       <Card>
