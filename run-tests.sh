@@ -66,6 +66,33 @@ echo "── NestJS Tests ──"
 run_jest_test "NotificationHub" "$ROOT_DIR/PopaDin.NotificationHub"
 run_jest_test "AnalyticsService" "$ROOT_DIR/PopaDin.AnalyticsService"
 
+# ── Frontend Tests (Vitest) ──
+echo ""
+echo "── Frontend Tests ──"
+
+run_vitest_test() {
+    local name="$1"
+    local dir="$2"
+
+    echo ""
+    echo "  ▸ $name"
+
+    if output=$(cd "$dir" && npx vitest run 2>&1); then
+        clean=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
+        count=$(echo "$clean" | grep 'Tests' | grep 'passed' | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+        count=${count:-0}
+        PASSED=$((PASSED + count))
+        TOTAL=$((TOTAL + count))
+        echo "    ✓ $count testes passaram"
+    else
+        echo "    ✗ FALHOU"
+        echo "$output" | grep -E "Tests|FAIL|failed" | head -5
+        FAILED=1
+    fi
+}
+
+run_vitest_test "Frontend (React)" "$ROOT_DIR/Frontend"
+
 # ── Resultado ──
 echo ""
 echo "========================================"
