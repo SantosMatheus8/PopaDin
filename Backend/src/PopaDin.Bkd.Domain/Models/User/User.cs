@@ -9,6 +9,7 @@ public class User
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
     public decimal Balance { get; set; }
+    public string? ProfilePictureUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

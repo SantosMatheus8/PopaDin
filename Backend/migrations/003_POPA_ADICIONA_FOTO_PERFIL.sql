@@ -1,0 +1,1 @@
+ALTER TABLE [User] ADD ProfilePictureUrl NVARCHAR(500) NULL;

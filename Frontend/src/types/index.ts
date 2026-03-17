@@ -23,6 +23,7 @@ export interface UserResponse {
   name: string;
   email: string;
   balance: number;
+  profilePictureUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

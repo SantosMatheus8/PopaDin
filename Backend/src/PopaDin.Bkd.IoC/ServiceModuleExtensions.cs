@@ -11,6 +11,7 @@ using Azure.Storage.Blobs;
 using MongoDB.Driver;
 using PopaDin.Bkd.Domain.Interfaces;
 using PopaDin.Bkd.Infra;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace PopaDin.Bkd.Ioc;
@@ -76,6 +77,18 @@ public static class ServiceModuleExtensions
             var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             containerClient.CreateIfNotExists();
             return containerClient;
+        });
+
+        // Azure Blob Storage - Profile Pictures
+        services.AddSingleton<IProfilePictureBlobRepository>(sp =>
+        {
+            var connectionString = configuration["BlobStorageSettings:ConnectionString"];
+            var containerName = configuration["BlobStorageSettings:ProfilePictureContainerName"] ?? "profile-pictures";
+            var blobServiceClient = new BlobServiceClient(connectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            containerClient.CreateIfNotExists();
+            var logger = sp.GetRequiredService<ILogger<BlobProfilePictureRepository>>();
+            return new BlobProfilePictureRepository(containerClient, logger);
         });
 
         // TimeProvider

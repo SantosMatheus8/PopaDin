@@ -61,8 +61,19 @@ export function Sidebar() {
       </div>
 
       <div className="border-t border-secondary-700 p-4">
-        <div className="mb-3 truncate text-sm text-gray-400">
-          {user?.name}
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary-700">
+            {user?.profilePictureUrl ? (
+              <img
+                src={user.profilePictureUrl}
+                alt={user.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="h-4 w-4 text-gray-400" />
+            )}
+          </div>
+          <span className="truncate text-sm text-gray-400">{user?.name}</span>
         </div>
         <button
           onClick={logout}

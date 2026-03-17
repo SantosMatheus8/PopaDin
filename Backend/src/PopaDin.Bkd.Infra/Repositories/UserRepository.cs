@@ -170,6 +170,27 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
         return response!;
     }
 
+    public async Task UpdateProfilePictureUrlAsync(int userId, string? url)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            logger.LogInformation("Atualizando ProfilePictureUrl do User: {UserId}", userId);
+            await connection.ExecuteAsync(UserQueries.UpdateProfilePictureUrl,
+                new { UserId = userId, ProfilePictureUrl = url, UpdatedAt = DateTime.UtcNow },
+                transaction);
+            transaction.Commit();
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            logger.LogError("Erro ao atualizar ProfilePictureUrl do User: {Message}", e.Message);
+            throw;
+        }
+    }
+
     public async Task UpdateBalanceAsync(int userId, decimal amount)
     {
         using var connection = connectionFactory.CreateConnection();

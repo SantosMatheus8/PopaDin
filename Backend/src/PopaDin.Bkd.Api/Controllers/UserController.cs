@@ -69,4 +69,30 @@ public class UserController(IUserService userService) : ControllerBase
         await userService.DeleteUserAsync(userId, authenticatedUserId);
         return NoContent();
     }
+
+    [HttpPost("{userId:int}/profile-picture")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<ActionResult> UploadProfilePicture([FromRoute] int userId, IFormFile file)
+    {
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest(new ProblemDetails { Detail = "Tipo de arquivo não permitido. Use JPG, PNG ou WebP." });
+
+        var authenticatedUserId = User.GetUserId();
+        using var stream = file.OpenReadStream();
+        var url = await userService.UploadProfilePictureAsync(userId, authenticatedUserId, stream, file.ContentType);
+        return Ok(new { profilePictureUrl = url });
+    }
+
+    [HttpDelete("{userId:int}/profile-picture")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteProfilePicture([FromRoute] int userId)
+    {
+        var authenticatedUserId = User.GetUserId();
+        await userService.DeleteProfilePictureAsync(userId, authenticatedUserId);
+        return NoContent();
+    }
 }

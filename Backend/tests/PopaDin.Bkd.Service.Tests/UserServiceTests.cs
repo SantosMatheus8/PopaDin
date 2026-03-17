@@ -13,13 +13,14 @@ public class UserServiceTests
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IUserCacheRepository _cacheRepository = Substitute.For<IUserCacheRepository>();
+    private readonly IProfilePictureBlobRepository _profilePictureBlobRepository = Substitute.For<IProfilePictureBlobRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ILogger<UserService> _logger = Substitute.For<ILogger<UserService>>();
     private readonly UserService _sut;
 
     public UserServiceTests()
     {
-        _sut = new UserService(_userRepository, _cacheRepository, _passwordHasher, _logger);
+        _sut = new UserService(_userRepository, _cacheRepository, _profilePictureBlobRepository, _passwordHasher, _logger);
     }
 
     #region CreateUserAsync

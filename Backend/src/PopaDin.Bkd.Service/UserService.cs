@@ -8,6 +8,7 @@ namespace PopaDin.Bkd.Service;
 public class UserService(
     IUserRepository repository,
     IUserCacheRepository cacheRepository,
+    IProfilePictureBlobRepository profilePictureBlobRepository,
     IPasswordHasher passwordHasher,
     ILogger<UserService> logger) : IUserService
 {
@@ -75,6 +76,30 @@ public class UserService(
         ValidateUserOwnership(userId, authenticatedUserId);
         await FindUserOrThrowAsync(userId);
         await repository.DeleteUserAsync(userId);
+        await cacheRepository.InvalidateAsync(userId);
+    }
+
+    public async Task<string> UploadProfilePictureAsync(int userId, int authenticatedUserId, Stream fileStream, string contentType)
+    {
+        logger.LogInformation("Fazendo upload da foto de perfil do User: {UserId}", userId);
+        ValidateUserOwnership(userId, authenticatedUserId);
+        await FindUserOrThrowAsync(userId);
+
+        var url = await profilePictureBlobRepository.UploadAsync(userId, fileStream, contentType);
+        await repository.UpdateProfilePictureUrlAsync(userId, url);
+        await cacheRepository.InvalidateAsync(userId);
+
+        return url;
+    }
+
+    public async Task DeleteProfilePictureAsync(int userId, int authenticatedUserId)
+    {
+        logger.LogInformation("Deletando foto de perfil do User: {UserId}", userId);
+        ValidateUserOwnership(userId, authenticatedUserId);
+        await FindUserOrThrowAsync(userId);
+
+        await profilePictureBlobRepository.DeleteAsync(userId);
+        await repository.UpdateProfilePictureUrlAsync(userId, null);
         await cacheRepository.InvalidateAsync(userId);
     }
 

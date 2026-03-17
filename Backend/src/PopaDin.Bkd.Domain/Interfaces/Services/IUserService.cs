@@ -9,4 +9,6 @@ public interface IUserService
     Task<User> FindUserByIdAsync(int userId, int authenticatedUserId);
     Task<User> UpdateUserAsync(User updateUserRequest, int userId, int authenticatedUserId);
     Task DeleteUserAsync(int userId, int authenticatedUserId);
+    Task<string> UploadProfilePictureAsync(int userId, int authenticatedUserId, Stream fileStream, string contentType);
+    Task DeleteProfilePictureAsync(int userId, int authenticatedUserId);
 }

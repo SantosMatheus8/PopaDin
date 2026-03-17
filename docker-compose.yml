@@ -103,6 +103,7 @@ services:
       - ServiceBusSettings__NotificationsQueueName=notifications
       - BlobStorageSettings__ConnectionString=${BLOB_STORAGE_CONNECTION_STRING}
       - BlobStorageSettings__ContainerName=pdf-exports
+      - BlobStorageSettings__ProfilePictureContainerName=profile-pictures
       - AppSettings__Secret=${JWT_SECRET}
     restart: unless-stopped
 

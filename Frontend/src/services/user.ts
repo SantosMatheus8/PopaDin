@@ -31,4 +31,19 @@ export const userService = {
   delete: async (userId: number): Promise<void> => {
     await api.delete(`/user/${userId}`);
   },
+
+  uploadProfilePicture: async (userId: number, file: File): Promise<{ profilePictureUrl: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post<{ profilePictureUrl: string }>(
+      `/user/${userId}/profile-picture`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  },
+
+  deleteProfilePicture: async (userId: number): Promise<void> => {
+    await api.delete(`/user/${userId}/profile-picture`);
+  },
 };
