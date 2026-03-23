@@ -8,6 +8,7 @@ namespace PopaDin.Bkd.Infra.Publishers;
 
 public class ServiceBusExportEventPublisher : IExportEventPublisher
 {
+    private const int MaxRetries = 3;
     private readonly ServiceBusSender _sender;
     private readonly ILogger<ServiceBusExportEventPublisher> _logger;
 
@@ -37,8 +38,33 @@ public class ServiceBusExportEventPublisher : IExportEventPublisher
             Subject = "ExportRequest"
         };
 
-        _logger.LogInformation("Publicando evento ExportRequest no Service Bus para o usuário {UserId}", userId);
+        await SendWithRetryAsync(message, userId);
+    }
 
-        await _sender.SendMessageAsync(message);
+    private async Task SendWithRetryAsync(ServiceBusMessage message, int userId)
+    {
+        for (var attempt = 1; attempt <= MaxRetries; attempt++)
+        {
+            try
+            {
+                _logger.LogInformation("Publicando evento ExportRequest no Service Bus para o usuário {UserId} (tentativa {Attempt}/{MaxRetries})",
+                    userId, attempt, MaxRetries);
+
+                await _sender.SendMessageAsync(message);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxRetries)
+            {
+                _logger.LogWarning(ex, "Falha ao publicar evento ExportRequest para o usuário {UserId} (tentativa {Attempt}/{MaxRetries}). Retentando...",
+                    userId, attempt, MaxRetries);
+
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha definitiva ao publicar evento ExportRequest no Service Bus para o usuário {UserId} após {MaxRetries} tentativas",
+                    userId, MaxRetries);
+            }
+        }
     }
 }

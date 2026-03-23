@@ -241,7 +241,7 @@ public class RecordService(
 
         if (record == null)
         {
-            logger.LogInformation("Record nao encontrado");
+            logger.LogWarning("Record não encontrado. RecordId: {RecordId}, UserId: {UserId}", recordId, userId);
             throw new NotFoundException("Record não encontrado");
         }
 

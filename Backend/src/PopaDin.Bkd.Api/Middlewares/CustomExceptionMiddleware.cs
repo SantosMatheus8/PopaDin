@@ -24,12 +24,17 @@ public class CustomExceptionMiddleware(RequestDelegate next, ILogger<CustomExcep
         }
     }
 
-    private static async Task WriteResponseAsync(HttpContext context, int statusCode, string message)
+    private static async Task WriteResponseAsync(HttpContext context, int statusCode, string message, Dictionary<string, string[]>? errors = null)
     {
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = MediaTypeNames.Application.Json;
 
-        var response = JsonSerializer.Serialize(new { ErrorMessage = message });
+        var response = JsonSerializer.Serialize(new
+        {
+            statusCode,
+            message,
+            errors
+        }, new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
         await context.Response.WriteAsync(response);
     }
 }

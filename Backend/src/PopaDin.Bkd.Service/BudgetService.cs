@@ -56,6 +56,7 @@ public class BudgetService(
 
     public async Task DeleteBudgetAsync(int budgetId, int userId)
     {
+        logger.LogInformation("Deletando Budget {BudgetId} do usuário {UserId}", budgetId, userId);
         await FindBudgetOrThrowAsync(budgetId, userId);
         await repository.DeleteBudgetAsync(budgetId);
 
@@ -76,7 +77,7 @@ public class BudgetService(
 
         if (budget == null)
         {
-            logger.LogInformation("Budget nao encontrado");
+            logger.LogWarning("Budget não encontrado. BudgetId: {BudgetId}, UserId: {UserId}", budgetId, userId);
             throw new NotFoundException("Budget não encontrado");
         }
 

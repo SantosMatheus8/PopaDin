@@ -60,6 +60,7 @@ public class TagService(
 
     public async Task DeleteTagAsync(int tagId, int userId)
     {
+        logger.LogInformation("Deletando Tag {TagId} do usuário {UserId}", tagId, userId);
         await FindTagOrThrowAsync(tagId, userId);
         await repository.DeleteTagAsync(tagId);
 
@@ -83,7 +84,7 @@ public class TagService(
 
         if (tag == null)
         {
-            logger.LogInformation("Tag nao encontrada");
+            logger.LogWarning("Tag não encontrada. TagId: {TagId}, UserId: {UserId}", tagId, userId);
             throw new NotFoundException("Tag não encontrada");
         }
 

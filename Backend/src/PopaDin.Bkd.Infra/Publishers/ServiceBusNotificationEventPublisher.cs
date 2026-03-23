@@ -8,6 +8,7 @@ namespace PopaDin.Bkd.Infra.Publishers;
 
 public class ServiceBusNotificationEventPublisher : INotificationEventPublisher
 {
+    private const int MaxRetries = 3;
     private readonly ServiceBusSender _sender;
     private readonly ILogger<ServiceBusNotificationEventPublisher> _logger;
 
@@ -39,8 +40,33 @@ public class ServiceBusNotificationEventPublisher : INotificationEventPublisher
             Subject = "Notification"
         };
 
-        _logger.LogInformation("Publicando notificação do tipo {Type} na fila notifications para o usuário {UserId}", type, userId);
+        await SendWithRetryAsync(serviceBusMessage, type, userId);
+    }
 
-        await _sender.SendMessageAsync(serviceBusMessage);
+    private async Task SendWithRetryAsync(ServiceBusMessage message, string eventType, int userId)
+    {
+        for (var attempt = 1; attempt <= MaxRetries; attempt++)
+        {
+            try
+            {
+                _logger.LogInformation("Publicando notificação do tipo {Type} na fila notifications para o usuário {UserId} (tentativa {Attempt}/{MaxRetries})",
+                    eventType, userId, attempt, MaxRetries);
+
+                await _sender.SendMessageAsync(message);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxRetries)
+            {
+                _logger.LogWarning(ex, "Falha ao publicar notificação do tipo {Type} para o usuário {UserId} (tentativa {Attempt}/{MaxRetries}). Retentando...",
+                    eventType, userId, attempt, MaxRetries);
+
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha definitiva ao publicar notificação do tipo {Type} para o usuário {UserId} após {MaxRetries} tentativas",
+                    eventType, userId, MaxRetries);
+            }
+        }
     }
 }

@@ -55,7 +55,7 @@ public class CustomExceptionMiddlewareTests
 
         context.Response.StatusCode.Should().Be(404);
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().Be("Recurso não encontrado");
+        json.GetProperty("message").GetString().Should().Be("Recurso não encontrado");
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class CustomExceptionMiddlewareTests
 
         context.Response.StatusCode.Should().Be(422);
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().Be("Dados inválidos");
+        json.GetProperty("message").GetString().Should().Be("Dados inválidos");
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class CustomExceptionMiddlewareTests
 
         context.Response.StatusCode.Should().Be(401);
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().Be("Credenciais inválidas");
+        json.GetProperty("message").GetString().Should().Be("Credenciais inválidas");
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class CustomExceptionMiddlewareTests
 
         context.Response.StatusCode.Should().Be(500);
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().Be("Ocorreu um erro inesperado.");
+        json.GetProperty("message").GetString().Should().Be("Ocorreu um erro inesperado.");
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class CustomExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().NotContain("Internal secret error");
+        json.GetProperty("message").GetString().Should().NotContain("Internal secret error");
     }
 
     [Fact]
@@ -141,6 +141,6 @@ public class CustomExceptionMiddlewareTests
         await middleware.InvokeAsync(context);
 
         var json = await GetResponseJson(context);
-        json.GetProperty("ErrorMessage").GetString().Should().Be("Test message");
+        json.GetProperty("message").GetString().Should().Be("Test message");
     }
 }

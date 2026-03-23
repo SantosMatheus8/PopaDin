@@ -10,6 +10,8 @@ public class ServiceBusRecordEventPublisher(
     ServiceBusSender sender,
     ILogger<ServiceBusRecordEventPublisher> logger) : IRecordEventPublisher
 {
+    private const int MaxRetries = 3;
+
     public async Task PublishRecordCreatedAsync(int userId, decimal value, OperationEnum operation, decimal newBalance, decimal monthlyExpenses)
     {
         var eventPayload = new
@@ -28,8 +30,33 @@ public class ServiceBusRecordEventPublisher(
             Subject = "RecordCreated"
         };
 
-        logger.LogInformation("Publicando evento RecordCreated no Service Bus para o usuário {UserId}", userId);
+        await SendWithRetryAsync(message, "RecordCreated", userId);
+    }
 
-        await sender.SendMessageAsync(message);
+    private async Task SendWithRetryAsync(ServiceBusMessage message, string eventType, int userId)
+    {
+        for (var attempt = 1; attempt <= MaxRetries; attempt++)
+        {
+            try
+            {
+                logger.LogInformation("Publicando evento {EventType} no Service Bus para o usuário {UserId} (tentativa {Attempt}/{MaxRetries})",
+                    eventType, userId, attempt, MaxRetries);
+
+                await sender.SendMessageAsync(message);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxRetries)
+            {
+                logger.LogWarning(ex, "Falha ao publicar evento {EventType} para o usuário {UserId} (tentativa {Attempt}/{MaxRetries}). Retentando...",
+                    eventType, userId, attempt, MaxRetries);
+
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Falha definitiva ao publicar evento {EventType} no Service Bus para o usuário {UserId} após {MaxRetries} tentativas",
+                    eventType, userId, MaxRetries);
+            }
+        }
     }
 }

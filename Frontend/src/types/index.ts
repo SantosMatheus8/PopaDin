@@ -1,5 +1,14 @@
 import { FrequencyEnum, OperationEnum, OrderDirection } from "./enums";
 
+// --- API Error ---
+export interface ApiError {
+  statusCode: number;
+  message: string;
+  detail?: string;
+  title?: string;
+  errors?: Record<string, string[]>;
+}
+
 // --- Pagination ---
 export interface PaginatedResult<T> {
   lines: T[];

@@ -52,7 +52,7 @@ public class AlertService(IAlertRepository repository, IUserRepository userRepos
 
         if (alert == null)
         {
-            logger.LogInformation("Alert nao encontrado");
+            logger.LogWarning("Alert não encontrado. AlertId: {AlertId}, UserId: {UserId}", alertId, userId);
             throw new NotFoundException("Alert não encontrado");
         }
 

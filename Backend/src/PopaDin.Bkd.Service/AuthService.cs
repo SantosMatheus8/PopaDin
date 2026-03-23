@@ -38,7 +38,12 @@ public class AuthService(
             new Claim("name", user.Name)
         };
 
+        var issuer = configuration["JwtSettings:Issuer"] ?? "PopaDin.Api";
+        var audience = configuration["JwtSettings:Audience"] ?? "PopaDin.Client";
+
         var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
             expires: DateTime.UtcNow.AddDays(7),
             claims: claims,
             signingCredentials: credentials

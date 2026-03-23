@@ -107,7 +107,7 @@ public class UserService(
     {
         if (userId != authenticatedUserId)
         {
-            logger.LogInformation("User tentou acessar dados de outro usuario");
+            logger.LogWarning("User {AuthenticatedUserId} tentou acessar dados do usuário {UserId}", authenticatedUserId, userId);
             throw new NotFoundException("User não encontrado");
         }
     }
@@ -118,7 +118,7 @@ public class UserService(
 
         if (user == null)
         {
-            logger.LogInformation("User nao encontrado");
+            logger.LogWarning("User não encontrado. UserId: {UserId}", userId);
             throw new NotFoundException("User não encontrado");
         }
 
