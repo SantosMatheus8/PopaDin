@@ -103,67 +103,12 @@ public class RecordService(
         var tags = await GetValidatedTagsAsync(tagIds, userId);
 
         if (record.InstallmentGroupId != null)
-        {
-            var oldGroupRecords = await repository.FindByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-            await repository.DeleteManyByInstallmentGroupAsync(record.InstallmentGroupId, userId);
-
-            if (installments.HasValue && installments.Value > 1)
-            {
-                updateRecordRequest.Tags = tags;
-                updateRecordRequest.User = new User { Id = userId };
-                var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
-
-                await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
-                await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
-
-                await dashboardCacheRepository.InvalidateAsync(userId);
-                return newRecords.First();
-            }
-            else
-            {
-                updateRecordRequest.Tags = tags;
-                updateRecordRequest.User = new User { Id = userId };
-                var newRecord = await repository.CreateRecordAsync(updateRecordRequest);
-
-                await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
-                await balanceService.UpdateBalanceForNewRecordAsync(userId, newRecord);
-
-                await dashboardCacheRepository.InvalidateAsync(userId);
-                return newRecord;
-            }
-        }
+            return await UpdateFromInstallmentGroupAsync(record, updateRecordRequest, tags, userId, installments);
 
         if (installments.HasValue && installments.Value > 1)
-        {
-            await balanceService.RevertBalanceForRecordAsync(userId, record);
-            await repository.DeleteRecordAsync(recordId);
+            return await ConvertToInstallmentsAsync(record, updateRecordRequest, tags, userId, installments.Value);
 
-            updateRecordRequest.Tags = tags;
-            updateRecordRequest.User = new User { Id = userId };
-            var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRecordRequest, installments.Value);
-
-            await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
-
-            await dashboardCacheRepository.InvalidateAsync(userId);
-            return newRecords.First();
-        }
-
-        await balanceService.RevertBalanceForRecordAsync(userId, record);
-
-        record.Name = updateRecordRequest.Name;
-        record.Operation = updateRecordRequest.Operation;
-        record.Value = updateRecordRequest.Value;
-        record.Frequency = updateRecordRequest.Frequency;
-        record.ReferenceDate = updateRecordRequest.ReferenceDate ?? record.ReferenceDate;
-        record.RecurrenceEndDate = updateRecordRequest.RecurrenceEndDate;
-        record.Tags = tags;
-        await repository.UpdateRecordAsync(record);
-
-        await balanceService.UpdateBalanceForNewRecordAsync(userId, record);
-
-        await dashboardCacheRepository.InvalidateAsync(userId);
-
-        return await FindRecordOrThrowAsync(recordId, userId);
+        return await UpdateSingleRecordAsync(record, updateRecordRequest, tags, userId);
     }
 
     public async Task DeleteRecordAsync(string recordId, int userId)
@@ -183,6 +128,62 @@ public class RecordService(
         }
 
         await dashboardCacheRepository.InvalidateAsync(userId);
+    }
+
+    private async Task<Record> UpdateFromInstallmentGroupAsync(Record existingRecord, Record updateRequest, List<Tag> tags, int userId, int? installments)
+    {
+        var oldGroupRecords = await repository.FindByInstallmentGroupAsync(existingRecord.InstallmentGroupId!, userId);
+        await repository.DeleteManyByInstallmentGroupAsync(existingRecord.InstallmentGroupId!, userId);
+
+        updateRequest.Tags = tags;
+        updateRequest.User = new User { Id = userId };
+
+        if (installments.HasValue && installments.Value > 1)
+        {
+            var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRequest, installments.Value);
+            await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
+            await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
+            await dashboardCacheRepository.InvalidateAsync(userId);
+            return newRecords.First();
+        }
+
+        var newRecord = await repository.CreateRecordAsync(updateRequest);
+        await balanceService.RevertBalanceForRecordsAsync(userId, oldGroupRecords);
+        await balanceService.UpdateBalanceForNewRecordAsync(userId, newRecord);
+        await dashboardCacheRepository.InvalidateAsync(userId);
+        return newRecord;
+    }
+
+    private async Task<Record> ConvertToInstallmentsAsync(Record existingRecord, Record updateRequest, List<Tag> tags, int userId, int installmentCount)
+    {
+        await balanceService.RevertBalanceForRecordAsync(userId, existingRecord);
+        await repository.DeleteRecordAsync(existingRecord.Id!);
+
+        updateRequest.Tags = tags;
+        updateRequest.User = new User { Id = userId };
+        var newRecords = await installmentService.CreateInstallmentRecordsAsync(updateRequest, installmentCount);
+
+        await balanceService.UpdateBalanceForNewRecordsAsync(userId, newRecords);
+        await dashboardCacheRepository.InvalidateAsync(userId);
+        return newRecords.First();
+    }
+
+    private async Task<Record> UpdateSingleRecordAsync(Record existingRecord, Record updateRequest, List<Tag> tags, int userId)
+    {
+        await balanceService.RevertBalanceForRecordAsync(userId, existingRecord);
+
+        existingRecord.Name = updateRequest.Name;
+        existingRecord.Operation = updateRequest.Operation;
+        existingRecord.Value = updateRequest.Value;
+        existingRecord.Frequency = updateRequest.Frequency;
+        existingRecord.ReferenceDate = updateRequest.ReferenceDate ?? existingRecord.ReferenceDate;
+        existingRecord.RecurrenceEndDate = updateRequest.RecurrenceEndDate;
+        existingRecord.Tags = tags;
+        await repository.UpdateRecordAsync(existingRecord);
+
+        await balanceService.UpdateBalanceForNewRecordAsync(userId, existingRecord);
+        await dashboardCacheRepository.InvalidateAsync(userId);
+        return existingRecord;
     }
 
     private async Task<List<Tag>> GetValidatedTagsAsync(List<int> tagIds, int userId)

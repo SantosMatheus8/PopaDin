@@ -34,8 +34,8 @@ public class RecordServiceTests
         _timeProvider.GetUtcNow().Returns(new DateTimeOffset(2024, 6, 15, 12, 0, 0, TimeSpan.Zero));
         _sut = new RecordService(
             _recordRepository, _tagRepository, _tagCacheRepository, _dashboardCacheRepository,
-            _userRepository, _balanceService, _installmentService, _recordEventPublisher,
-            _notificationEventPublisher, _timeProvider, _logger);
+            _userRepository, _balanceService, _installmentService,
+            _recordEventPublisher, _notificationEventPublisher, _timeProvider, _logger);
     }
 
     private void SetupDefaultTagCache(int userId = UserId)
@@ -276,7 +276,7 @@ public class RecordServiceTests
         var updateRequest = new Record { Name = "New", Operation = OperationEnum.Outflow, Value = 200, Frequency = FrequencyEnum.Monthly };
         var updatedRecord = new Record { Id = "abc", Name = "New", Operation = OperationEnum.Outflow, Value = 200 };
 
-        _recordRepository.FindRecordByIdAsync("abc", UserId).Returns(existingRecord, updatedRecord);
+        _recordRepository.FindRecordByIdAsync("abc", UserId).Returns(existingRecord);
 
         var result = await _sut.UpdateRecordAsync(updateRequest, [1], "abc", UserId);
 

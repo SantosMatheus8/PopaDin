@@ -8,6 +8,8 @@ using PopaDin.Bkd.Ioc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using PopaDin.Bkd.Api.Middlewares;
 
 namespace PopaDin.Bkd.Api;
@@ -73,6 +75,9 @@ public static class Program
 
         services.AddControllers()
             .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Clear());
+
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<PopaDin.Bkd.Api.Validators.LoginRequestValidator>();
 
         services.AddRouting(options => options.LowercaseUrls = true);
         services.AddHttpClient();

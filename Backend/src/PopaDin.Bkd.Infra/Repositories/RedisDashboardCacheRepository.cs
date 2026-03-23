@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using PopaDin.Bkd.Domain;
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Models;
 using StackExchange.Redis;
@@ -10,14 +11,13 @@ public class RedisDashboardCacheRepository(IConnectionMultiplexer redis, ILogger
     : IDashboardCacheRepository
 {
     private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(50);
-    private const string KeyPrefix = "dashboard:";
 
     public async Task<DashboardResult?> GetAsync(int userId, DateTime startDate, DateTime endDate)
     {
         try
         {
             var db = redis.GetDatabase();
-            var cached = await db.StringGetAsync(BuildKey(userId, startDate, endDate));
+            var cached = await db.StringGetAsync(CacheKeys.Dashboard(userId, startDate, endDate));
 
             if (cached.IsNullOrEmpty)
                 return null;
@@ -37,7 +37,7 @@ public class RedisDashboardCacheRepository(IConnectionMultiplexer redis, ILogger
         {
             var db = redis.GetDatabase();
             var serialized = JsonSerializer.Serialize(dashboard);
-            await db.StringSetAsync(BuildKey(userId, startDate, endDate), serialized, CacheExpiration);
+            await db.StringSetAsync(CacheKeys.Dashboard(userId, startDate, endDate), serialized, CacheExpiration);
         }
         catch (Exception ex)
         {
@@ -51,9 +51,8 @@ public class RedisDashboardCacheRepository(IConnectionMultiplexer redis, ILogger
         {
             var server = redis.GetServers().First();
             var db = redis.GetDatabase();
-            var pattern = $"{KeyPrefix}{userId}:*";
 
-            await foreach (var key in server.KeysAsync(pattern: pattern))
+            await foreach (var key in server.KeysAsync(pattern: CacheKeys.DashboardPattern(userId)))
             {
                 await db.KeyDeleteAsync(key);
             }
@@ -63,7 +62,4 @@ public class RedisDashboardCacheRepository(IConnectionMultiplexer redis, ILogger
             logger.LogWarning(ex, "Falha ao invalidar cache Redis de dashboard para o usuário {UserId}", userId);
         }
     }
-
-    private static string BuildKey(int userId, DateTime startDate, DateTime endDate) =>
-        $"{KeyPrefix}{userId}:{startDate:yyyy-MM-dd}:{endDate:yyyy-MM-dd}";
 }
