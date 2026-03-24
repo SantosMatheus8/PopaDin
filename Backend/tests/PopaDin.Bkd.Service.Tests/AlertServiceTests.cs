@@ -66,7 +66,7 @@ public class AlertServiceTests
     [Fact]
     public async Task CreateAlertAsync_ShouldSetChannelFromUserEmail()
     {
-        var alert = new Alert { Type = AlertType.BUDGET_ABOVE, Threshold = 500 };
+        var alert = new Alert { Type = AlertType.GOAL_ABOVE, Threshold = 500 };
         var user = new User { Id = 1, Email = "user@email.com" };
 
         _alertRepository.GetAlertsByUserIdAsync(1).Returns(new List<Alert>());

@@ -16,7 +16,7 @@ describe("dashboardService", () => {
   it("deve buscar dashboard sem parâmetros", async () => {
     const mockData = {
       summary: { totalDeposits: 1000, totalOutflows: 500, balance: 500, recordCount: 10 },
-      budgets: [],
+      goals: [],
       spendingByTag: [],
       latestRecords: [],
       topDeposits: [],

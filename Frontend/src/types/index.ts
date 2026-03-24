@@ -167,33 +167,35 @@ export interface ExportFileResponse {
   createdAt: string | null;
 }
 
-// --- Budget ---
-export interface BudgetResponse {
+// --- Goal (Meta) ---
+export interface GoalResponse {
   id: number;
   name: string;
-  goal: number;
+  targetAmount: number;
   userId: number;
+  deadline: string | null;
   finishAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateBudgetRequest {
+export interface CreateGoalRequest {
   name: string;
-  goal: number;
+  targetAmount: number;
+  deadline?: string | null;
 }
 
-export interface UpdateBudgetRequest {
+export interface UpdateGoalRequest {
   name: string;
-  goal: number;
+  targetAmount: number;
+  deadline?: string | null;
 }
 
-export interface ListBudgetsRequest extends PaginationParams {
+export interface ListGoalsRequest extends PaginationParams {
   id?: number;
   name?: string;
-  goal?: number;
-  currentAmount?: number;
-  orderBy?: "Id" | "Name" | "Goal" | "CurrentAmount" | "FinishAt";
+  targetAmount?: number;
+  orderBy?: "Id" | "Name" | "TargetAmount" | "Deadline" | "FinishAt";
 }
 
 // --- Alert ---
@@ -249,13 +251,13 @@ export interface DashboardSummaryResponse {
   recordCount: number;
 }
 
-export interface DashboardBudgetResponse {
+export interface DashboardGoalResponse {
   id: number;
   name: string;
-  goal: number;
-  totalSpent: number;
-  usedPercentage: number;
-  status: "ok" | "alert" | "exceeded";
+  targetAmount: number;
+  totalSaved: number;
+  savedPercentage: number;
+  status: "ok" | "close" | "achieved";
 }
 
 export interface DashboardSpendingByTagResponse {
@@ -266,7 +268,7 @@ export interface DashboardSpendingByTagResponse {
 
 export interface DashboardResponse {
   summary: DashboardSummaryResponse;
-  budgets: DashboardBudgetResponse[];
+  goals: DashboardGoalResponse[];
   spendingByTag: DashboardSpendingByTagResponse[];
   latestRecords: RecordResponse[];
   topDeposits: RecordResponse[];

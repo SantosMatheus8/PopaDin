@@ -30,7 +30,7 @@ public class DashboardControllerTests
             .Returns(new DashboardResult
             {
                 Summary = new DashboardSummary { TotalDeposits = 5000, TotalOutflows = 2000, Balance = 3000 },
-                Budgets = new List<DashboardBudget>(),
+                Goals = new List<DashboardGoal>(),
                 SpendingByTag = new List<DashboardSpendingByTag>(),
                 LatestRecords = new List<Record>(),
                 TopDeposits = new List<Record>(),
@@ -54,7 +54,7 @@ public class DashboardControllerTests
             .Returns(new DashboardResult
             {
                 Summary = new DashboardSummary(),
-                Budgets = new List<DashboardBudget>(),
+                Goals = new List<DashboardGoal>(),
                 SpendingByTag = new List<DashboardSpendingByTag>(),
                 LatestRecords = new List<Record>(),
                 TopDeposits = new List<Record>(),

@@ -12,7 +12,7 @@ public class DashboardServiceTests
 {
     private readonly IDashboardRepository _dashboardRepository = Substitute.For<IDashboardRepository>();
     private readonly IDashboardCacheRepository _cacheRepository = Substitute.For<IDashboardCacheRepository>();
-    private readonly IBudgetRepository _budgetRepository = Substitute.For<IBudgetRepository>();
+    private readonly IGoalRepository _goalRepository = Substitute.For<IGoalRepository>();
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IRecordRepository _recordRepository = Substitute.For<IRecordRepository>();
     private readonly ILogger<DashboardService> _logger = Substitute.For<ILogger<DashboardService>>();
@@ -23,7 +23,7 @@ public class DashboardServiceTests
     public DashboardServiceTests()
     {
         _sut = new DashboardService(
-            _dashboardRepository, _cacheRepository, _budgetRepository,
+            _dashboardRepository, _cacheRepository, _goalRepository,
             _userRepository, _recordRepository, _logger);
     }
 
@@ -36,7 +36,7 @@ public class DashboardServiceTests
             LatestRecords = new List<Record>(),
             TopDeposits = new List<Record>(),
             TopOutflows = new List<Record>(),
-            Budgets = new List<DashboardBudget>()
+            Goals = new List<DashboardGoal>()
         };
     }
 
@@ -46,8 +46,8 @@ public class DashboardServiceTests
 
         _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
             .Returns(dashboard);
-        _budgetRepository.GetBudgetsAsync(Arg.Any<ListBudgets>())
-            .Returns(new PaginatedResult<Budget> { Lines = new List<Budget>(), Page = 1, TotalItems = 0 });
+        _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>())
+            .Returns(new PaginatedResult<Goal> { Lines = new List<Goal>(), Page = 1, TotalItems = 0 });
         _userRepository.FindUserByIdAsync(UserId)
             .Returns(new User { Id = UserId, Balance = 3000 });
         _recordRepository.GetRecurringRecordsAsync(UserId)
@@ -108,18 +108,18 @@ public class DashboardServiceTests
     }
 
     [Fact]
-    public async Task GetDashboardAsync_WithBudgets_ShouldMapBudgetStatus()
+    public async Task GetDashboardAsync_WithGoals_ShouldMapGoalStatus()
     {
         _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
 
         var dashboard = CreateDefaultDashboard();
         _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns(dashboard);
-        _budgetRepository.GetBudgetsAsync(Arg.Any<ListBudgets>()).Returns(new PaginatedResult<Budget>
+        _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>()).Returns(new PaginatedResult<Goal>
         {
-            Lines = new List<Budget>
+            Lines = new List<Goal>
             {
-                new() { Id = 1, Name = "Savings", Goal = 5000 },
-                new() { Id = 2, Name = "Emergency", Goal = 2000, FinishAt = DateTime.UtcNow }
+                new() { Id = 1, Name = "Savings", TargetAmount = 5000 },
+                new() { Id = 2, Name = "Emergency", TargetAmount = 2000, FinishAt = DateTime.UtcNow }
             },
             Page = 1,
             TotalItems = 2
@@ -129,8 +129,8 @@ public class DashboardServiceTests
 
         var result = await _sut.GetDashboardAsync(UserId, null, null);
 
-        result.Budgets.Should().HaveCount(1);
-        result.Budgets[0].Name.Should().Be("Savings");
+        result.Goals.Should().HaveCount(1);
+        result.Goals[0].Name.Should().Be("Savings");
     }
 
     [Fact]
@@ -140,9 +140,9 @@ public class DashboardServiceTests
 
         var dashboard = CreateDefaultDashboard();
         _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns(dashboard);
-        _budgetRepository.GetBudgetsAsync(Arg.Any<ListBudgets>()).Returns(new PaginatedResult<Budget>
+        _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>()).Returns(new PaginatedResult<Goal>
         {
-            Lines = new List<Budget>(),
+            Lines = new List<Goal>(),
             Page = 1,
             TotalItems = 0
         });

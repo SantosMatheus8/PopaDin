@@ -42,9 +42,9 @@ public class AlertRuleServiceTests
     }
 
     [Fact]
-    public void IsRuleTriggered_BudgetAbove_WhenExpensesAboveThreshold_ShouldReturnTrue()
+    public void IsRuleTriggered_GoalAbove_WhenExpensesAboveThreshold_ShouldReturnTrue()
     {
-        var rule = new AlertRule { Type = nameof(AlertRuleType.BUDGET_ABOVE), Threshold = 1000 };
+        var rule = new AlertRule { Type = nameof(AlertRuleType.GOAL_ABOVE), Threshold = 1000 };
         var recordEvent = new RecordCreatedEvent { MonthlyExpenses = 1500 };
 
         var result = CreateService().IsRuleTriggered(rule, recordEvent);
@@ -53,9 +53,9 @@ public class AlertRuleServiceTests
     }
 
     [Fact]
-    public void IsRuleTriggered_BudgetAbove_WhenExpensesBelowThreshold_ShouldReturnFalse()
+    public void IsRuleTriggered_GoalAbove_WhenExpensesBelowThreshold_ShouldReturnFalse()
     {
-        var rule = new AlertRule { Type = nameof(AlertRuleType.BUDGET_ABOVE), Threshold = 1000 };
+        var rule = new AlertRule { Type = nameof(AlertRuleType.GOAL_ABOVE), Threshold = 1000 };
         var recordEvent = new RecordCreatedEvent { MonthlyExpenses = 800 };
 
         var result = CreateService().IsRuleTriggered(rule, recordEvent);
@@ -64,9 +64,9 @@ public class AlertRuleServiceTests
     }
 
     [Fact]
-    public void IsRuleTriggered_BudgetAbove_WhenExpensesEqualThreshold_ShouldReturnFalse()
+    public void IsRuleTriggered_GoalAbove_WhenExpensesEqualThreshold_ShouldReturnFalse()
     {
-        var rule = new AlertRule { Type = nameof(AlertRuleType.BUDGET_ABOVE), Threshold = 1000 };
+        var rule = new AlertRule { Type = nameof(AlertRuleType.GOAL_ABOVE), Threshold = 1000 };
         var recordEvent = new RecordCreatedEvent { MonthlyExpenses = 1000 };
 
         var result = CreateService().IsRuleTriggered(rule, recordEvent);

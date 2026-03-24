@@ -45,7 +45,7 @@ public class RecordService(
                 userId, record.Value, record.Operation, user.Balance, monthlyExpenses);
 
             await notificationEventPublisher.PublishAsync(
-                userId, "RECORD_CREATED", "Record Criado",
+                userId, "RECORD_CREATED", "Registro Criado",
                 $"Record '{record.Name}' criado com sucesso",
                 new { recordId = firstRecord.Id, value = record.Value, operation = record.Operation.ToString() });
 
@@ -73,8 +73,8 @@ public class RecordService(
             userId, record.Value, record.Operation, userAfter.Balance, currentMonthExpenses);
 
         await notificationEventPublisher.PublishAsync(
-            userId, "RECORD_CREATED", "Record Criado",
-            $"Record '{record.Name}' criado com sucesso",
+            userId, "RECORD_CREATED", "Registro Criado",
+            $"Registro '{record.Name}' criado com sucesso",
             new { recordId = recordCreated!.Id, value = record.Value, operation = record.Operation.ToString() });
 
         await dashboardCacheRepository.InvalidateAsync(userId);

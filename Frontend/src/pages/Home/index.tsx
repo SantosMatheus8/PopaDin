@@ -34,10 +34,10 @@ const features = [
     color: "bg-purple-100 text-purple-600",
   },
   {
-    to: "/budgets",
+    to: "/goals",
     icon: Wallet,
-    title: "Orçamentos",
-    description: "Defina metas de gastos e acompanhe o progresso.",
+    title: "Metas",
+    description: "Defina metas de economia e acompanhe o progresso até bater cada uma.",
     color: "bg-amber-100 text-amber-600",
   },
   {
@@ -115,8 +115,8 @@ export default function HomePage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Controle</p>
-              <Link to="/budgets" className="text-sm font-semibold text-primary-600 hover:underline">
-                Ver Orçamentos →
+              <Link to="/goals" className="text-sm font-semibold text-primary-600 hover:underline">
+                Ver Metas →
               </Link>
             </div>
           </div>

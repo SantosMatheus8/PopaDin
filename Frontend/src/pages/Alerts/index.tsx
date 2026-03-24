@@ -90,8 +90,8 @@ export default function AlertsPage() {
                     {alert.active ? "Ativo" : "Inativo"}
                   </Badge>
                     <p className="text-sm font-medium text-gray-900">
-                      {alert.type === "BUDGET_ABOVE"
-                        ? "Alerta para orçamento acima de"
+                      {alert.type === "GOAL_ABOVE"
+                        ? "Alerta para meta acima de"
                         : alert.type === "BALANCE_BELOW"
                           ? "Alerta para saldo abaixo de"
                           : `Tipo ${alert.type}`}

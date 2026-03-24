@@ -1,15 +1,15 @@
 using PopaDin.Bkd.Domain.Enums;
 
-namespace PopaDin.Bkd.Api.Dtos.Budget;
+namespace PopaDin.Bkd.Domain.Models;
 
-public class ListBudgetsRequest
+public class ListGoals
 {
     public int? Id { get; set; }
     public string? Name { get; set; }
-    public decimal? Goal { get; set; }
-    public decimal? CurrentAmount { get; set; }
+    public decimal? TargetAmount { get; set; }
+    public int UserId { get; set; }
     public OrderDirection OrderDirection { get; set; }
-    public BudgetOrderBy OrderBy { get; set; }
+    public GoalOrderBy OrderBy { get; set; }
     public int Page { get; set; } = 1;
     public int ItemsPerPage { get; set; } = 20;
 }

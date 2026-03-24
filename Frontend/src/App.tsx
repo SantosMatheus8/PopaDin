@@ -10,7 +10,7 @@ import HomePage from "./pages/Home";
 import DashboardPage from "./pages/Dashboard";
 import RecordsPage from "./pages/Records";
 import TagsPage from "./pages/Tags";
-import BudgetsPage from "./pages/Budgets";
+import GoalsPage from "./pages/Goals";
 import AlertsPage from "./pages/Alerts";
 import ProfilePage from "./pages/Profile";
 import AnalyticsPage from "./pages/Analytics";
@@ -34,7 +34,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/records" element={<RecordsPage />} />
             <Route path="/tags" element={<TagsPage />} />
-            <Route path="/budgets" element={<BudgetsPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />

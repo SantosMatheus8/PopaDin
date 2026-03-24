@@ -61,15 +61,15 @@ public partial class NotificationService(
                     <li><strong>Limite Configurado:</strong> R$ {rule.Threshold:F2}</li>
                 </ul>
                 """,
-            nameof(AlertRuleType.BUDGET_ABOVE) =>
+            nameof(AlertRuleType.GOAL_ABOVE) =>
                 $"""
-                <h2>Alerta: Gastos Acima do Orçamento</h2>
+                <h2>Alerta: Gastos Acima da Meta</h2>
                 <p>Seus gastos mensais ultrapassaram o limite configurado.</p>
                 <ul>
                     <li><strong>Operação:</strong> {recordEvent.Operation}</li>
                     <li><strong>Valor:</strong> R$ {recordEvent.Value:F2}</li>
                     <li><strong>Gastos do Mês:</strong> R$ {recordEvent.MonthlyExpenses:F2}</li>
-                    <li><strong>Limite de Orçamento:</strong> R$ {rule.Threshold:F2}</li>
+                    <li><strong>Limite da Meta:</strong> R$ {rule.Threshold:F2}</li>
                 </ul>
                 """,
             _ =>
@@ -93,8 +93,8 @@ public partial class NotificationService(
                 $"Seu saldo atual é R$ {recordEvent.NewBalance:F2}, abaixo do limite de R$ {rule.Threshold:F2}",
                 new { currentBalance = recordEvent.NewBalance, threshold = rule.Threshold }
             ),
-            nameof(AlertRuleType.BUDGET_ABOVE) => (
-                "Alerta de Orçamento Excedido",
+            nameof(AlertRuleType.GOAL_ABOVE) => (
+                "Alerta de Meta Excedida",
                 $"Seus gastos mensais de R$ {recordEvent.MonthlyExpenses:F2} ultrapassaram o limite de R$ {rule.Threshold:F2}",
                 new { monthlyExpenses = recordEvent.MonthlyExpenses, threshold = rule.Threshold }
             ),

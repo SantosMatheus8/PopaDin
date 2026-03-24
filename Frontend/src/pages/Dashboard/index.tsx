@@ -85,9 +85,9 @@ export default function DashboardPage() {
 
   if (!data) return <EmptyState title="Erro ao carregar dashboard" />;
 
-  const { summary, budgets, spendingByTag, latestRecords } = data;
+  const { summary, goals, spendingByTag, latestRecords } = data;
 
-  const activeBudgets = budgets.filter((b) => b.status !== undefined);
+  const activeGoals = goals.filter((g) => g.status !== undefined);
 
   return (
     <div className="space-y-6">
@@ -177,15 +177,15 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Budgets */}
+        {/* Goals */}
         <Card>
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Orçamentos</h2>
-          {activeBudgets.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum orçamento ativo.</p>
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Metas</h2>
+          {activeGoals.length === 0 ? (
+            <p className="text-sm text-gray-400">Nenhuma meta ativa.</p>
           ) : (
             <div className="space-y-3">
-              {activeBudgets.map((budget) => {
-                const pct = budget.usedPercentage;
+              {activeGoals.map((goal) => {
+                const pct = goal.savedPercentage;
                 const barWidth = Math.max(0, Math.min(pct, 100));
                 const barColor =
                   pct >= 100 ? "bg-green-500"
@@ -197,9 +197,9 @@ export default function DashboardPage() {
                   pct >= 100 ? "success" : pct >= 80 ? "warning" : "error";
 
                 return (
-                  <div key={budget.id} className="space-y-1">
+                  <div key={goal.id} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">{budget.name}</span>
+                      <span className="text-sm font-medium text-gray-700">{goal.name}</span>
                       <Badge variant={badgeVariant}>
                         {pct}%
                       </Badge>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <p className="text-xs text-gray-400">
-                      {formatCurrency(budget.totalSpent)} / {formatCurrency(budget.goal)}
+                      {formatCurrency(goal.totalSaved)} / {formatCurrency(goal.targetAmount)}
                     </p>
                   </div>
                 );

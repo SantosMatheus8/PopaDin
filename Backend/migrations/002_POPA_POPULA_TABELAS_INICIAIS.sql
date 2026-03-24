@@ -2,13 +2,16 @@ SET NOCOUNT ON;
 
 DECLARE @i INT = 1;
 
+-- Senha padrão para todos os usuários de seed: Senha@123
+DECLARE @bcryptHash NVARCHAR(MAX) = '$2a$11$4gzZWKmhAGORC0x3FovtjOFm3697x19USHrYVAEVGtN.1z81UDWoK';
+
 WHILE @i <= 40
 BEGIN
     INSERT INTO [User] (Name, Email, Password, Balance, CreatedAt, UpdatedAt)
     VALUES (
         CONCAT('User ', @i),
         CONCAT('user', @i, '@example.com'),
-        CONCAT('hashed_password_', @i),
+        @bcryptHash,
         RAND() * 10000,
         DATEADD(DAY, -@i, GETDATE()),
         GETDATE()

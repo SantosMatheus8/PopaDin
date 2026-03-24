@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { budgetService } from "../../services/budget";
+import { goalService } from "../../services/goal";
 import { useApiError } from "../../hooks/useApiError";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
@@ -10,94 +10,94 @@ import { Badge } from "../../components/Badge";
 import { Pagination } from "../../components/Pagination";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { BudgetForm } from "./BudgetForm";
+import { GoalForm } from "./GoalForm";
 import { formatCurrency, formatDate } from "../../lib/format";
-import type { BudgetResponse, ListBudgetsRequest } from "../../types";
-import type { BudgetFormData } from "../../schemas/budget";
+import type { GoalResponse, ListGoalsRequest } from "../../types";
+import type { GoalFormData } from "../../schemas/goal";
 
-export default function BudgetsPage() {
+export default function GoalsPage() {
   const queryClient = useQueryClient();
   const { handleError } = useApiError();
 
-  const [params, setParams] = useState<ListBudgetsRequest>({ page: 1, itemsPerPage: 10 });
+  const [params, setParams] = useState<ListGoalsRequest>({ page: 1, itemsPerPage: 10 });
   const [formOpen, setFormOpen] = useState(false);
-  const [editingBudget, setEditingBudget] = useState<BudgetResponse | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<BudgetResponse | null>(null);
-  const [finishTarget, setFinishTarget] = useState<BudgetResponse | null>(null);
+  const [editingGoal, setEditingGoal] = useState<GoalResponse | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GoalResponse | null>(null);
+  const [finishTarget, setFinishTarget] = useState<GoalResponse | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["budgets", params],
-    queryFn: () => budgetService.list(params),
+    queryKey: ["goals", params],
+    queryFn: () => goalService.list(params),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: BudgetFormData) => budgetService.create(data),
+    mutationFn: (data: GoalFormData) => goalService.create(data),
     onSuccess: () => {
-      toast.success("Orçamento criado!");
-      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success("Meta criada!");
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (err) => handleError(err, "Erro ao criar orçamento"),
+    onError: (err) => handleError(err, "Erro ao criar meta"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: BudgetFormData }) =>
-      budgetService.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: GoalFormData }) =>
+      goalService.update(id, data),
     onSuccess: () => {
-      toast.success("Orçamento atualizado!");
-      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success("Meta atualizada!");
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (err) => handleError(err, "Erro ao atualizar orçamento"),
+    onError: (err) => handleError(err, "Erro ao atualizar meta"),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => budgetService.delete(id),
+    mutationFn: (id: number) => goalService.delete(id),
     onSuccess: () => {
-      toast.success("Orçamento excluído!");
-      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success("Meta excluída!");
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setDeleteTarget(null);
     },
-    onError: (err) => handleError(err, "Erro ao excluir orçamento"),
+    onError: (err) => handleError(err, "Erro ao excluir meta"),
   });
 
   const finishMutation = useMutation({
-    mutationFn: (id: number) => budgetService.finish(id),
+    mutationFn: (id: number) => goalService.finish(id),
     onSuccess: () => {
-      toast.success("Orçamento finalizado!");
-      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast.success("Meta batida! Parabéns!");
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setFinishTarget(null);
     },
-    onError: (err) => handleError(err, "Erro ao finalizar orçamento"),
+    onError: (err) => handleError(err, "Erro ao finalizar meta"),
   });
 
-  const handleCreate = async (data: BudgetFormData) => {
+  const handleCreate = async (data: GoalFormData) => {
     await createMutation.mutateAsync(data);
   };
 
-  const handleUpdate = async (data: BudgetFormData) => {
-    if (!editingBudget) return;
-    await updateMutation.mutateAsync({ id: editingBudget.id, data });
-    setEditingBudget(null);
+  const handleUpdate = async (data: GoalFormData) => {
+    if (!editingGoal) return;
+    await updateMutation.mutateAsync({ id: editingGoal.id, data });
+    setEditingGoal(null);
   };
 
-  const budgets = data?.lines ?? [];
+  const goals = data?.lines ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Orçamentos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Metas</h1>
         <Button
           size="sm"
           icon={<Plus className="h-4 w-4" />}
           onClick={() => {
-            setEditingBudget(null);
+            setEditingGoal(null);
             setFormOpen(true);
           }}
         >
-          Novo
+          Nova
         </Button>
       </div>
 
@@ -106,9 +106,9 @@ export default function BudgetsPage() {
           <div className="flex h-48 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
           </div>
-        ) : budgets.length === 0 ? (
+        ) : goals.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Nenhum orçamento" description="Crie seu primeiro orçamento." />
+            <EmptyState title="Nenhuma meta" description="Crie sua primeira meta de economia." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -116,39 +116,41 @@ export default function BudgetsPage() {
               <thead>
                 <tr className="border-b bg-gray-50 text-gray-500">
                   <th className="px-6 py-3 font-medium">Nome</th>
-                  <th className="px-6 py-3 font-medium">Meta</th>
+                  <th className="px-6 py-3 font-medium">Valor da Meta</th>
+                  <th className="px-6 py-3 font-medium">Data Limite</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">Criado em</th>
-                  <th className="px-6 py-3 font-medium">Finalizado em</th>
+                  <th className="px-6 py-3 font-medium">Batida em</th>
                   <th className="px-6 py-3 font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {budgets.map((budget) => (
-                  <tr key={budget.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">{budget.name}</td>
-                    <td className="px-6 py-4 text-gray-600">{formatCurrency(budget.goal)}</td>
+                {goals.map((goal) => (
+                  <tr key={goal.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-gray-900">{goal.name}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatCurrency(goal.targetAmount)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(goal.deadline)}</td>
                     <td className="px-6 py-4">
-                      <Badge variant={budget.finishAt ? "info" : "success"}>
-                        {budget.finishAt ? "Finalizado" : "Ativo"}
+                      <Badge variant={goal.finishAt ? "success" : "warning"}>
+                        {goal.finishAt ? "Batida" : "Em andamento"}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(budget.createdAt)}</td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(budget.finishAt)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(goal.createdAt)}</td>
+                    <td className="px-6 py-4 text-gray-600">{formatDate(goal.finishAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-1">
-                        {!budget.finishAt && (
+                        {!goal.finishAt && (
                           <button
-                            onClick={() => setFinishTarget(budget)}
+                            onClick={() => setFinishTarget(goal)}
                             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-green-500"
-                            title="Finalizar"
+                            title="Marcar como batida"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </button>
                         )}
                         <button
                           onClick={() => {
-                            setEditingBudget(budget);
+                            setEditingGoal(goal);
                             setFormOpen(true);
                           }}
                           className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-primary-500"
@@ -156,7 +158,7 @@ export default function BudgetsPage() {
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => setDeleteTarget(budget)}
+                          onClick={() => setDeleteTarget(goal)}
                           className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -181,14 +183,14 @@ export default function BudgetsPage() {
         )}
       </Card>
 
-      <BudgetForm
+      <GoalForm
         isOpen={formOpen}
         onClose={() => {
           setFormOpen(false);
-          setEditingBudget(null);
+          setEditingGoal(null);
         }}
-        onSubmit={editingBudget ? handleUpdate : handleCreate}
-        budget={editingBudget}
+        onSubmit={editingGoal ? handleUpdate : handleCreate}
+        goal={editingGoal}
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
@@ -196,8 +198,8 @@ export default function BudgetsPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Excluir orçamento"
-        message="Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita."
+        title="Excluir meta"
+        message="Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         isLoading={deleteMutation.isPending}
       />
@@ -206,9 +208,9 @@ export default function BudgetsPage() {
         isOpen={!!finishTarget}
         onClose={() => setFinishTarget(null)}
         onConfirm={() => finishTarget && finishMutation.mutate(finishTarget.id)}
-        title="Finalizar orçamento"
-        message={`Deseja finalizar o orçamento "${finishTarget?.name}"? Ele será marcado como concluído.`}
-        confirmLabel="Finalizar"
+        title="Marcar meta como batida"
+        message={`Deseja marcar a meta "${finishTarget?.name}" como batida? Parabéns por alcançar seu objetivo!`}
+        confirmLabel="Confirmar"
         isLoading={finishMutation.isPending}
       />
     </div>

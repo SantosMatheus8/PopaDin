@@ -29,7 +29,7 @@ public class AlertRuleService(IMongoDatabase database, ILogger<AlertRuleService>
         return rule.Type switch
         {
             nameof(AlertRuleType.BALANCE_BELOW) => recordEvent.NewBalance < rule.Threshold,
-            nameof(AlertRuleType.BUDGET_ABOVE) => recordEvent.MonthlyExpenses > rule.Threshold,
+            nameof(AlertRuleType.GOAL_ABOVE) => recordEvent.MonthlyExpenses > rule.Threshold,
             _ => false
         };
     }

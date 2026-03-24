@@ -95,7 +95,7 @@ public static class ServiceModuleExtensions
         services.AddSingleton(TimeProvider.System);
 
         // Services
-        services.AddScoped<IBudgetService, BudgetService>();
+        services.AddScoped<IGoalService, GoalService>();
         services.AddScoped<IRecordService, RecordService>();
         services.AddScoped<IBalanceService, BalanceService>();
         services.AddScoped<IInstallmentService, InstallmentService>();
@@ -107,7 +107,7 @@ public static class ServiceModuleExtensions
         services.AddScoped<IDashboardService, DashboardService>();
 
         // Repositories
-        services.AddScoped<IBudgetRepository, BudgetRepository>();
+        services.AddScoped<IGoalRepository, GoalRepository>();
         services.AddScoped<IRecordRepository, MongoRecordRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ITagCacheRepository, RedisTagCacheRepository>();

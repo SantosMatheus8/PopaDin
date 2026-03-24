@@ -101,14 +101,14 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAlertNotificationAsync_BudgetAboveType_ShouldSendCorrectEmail()
+    public async Task SendAlertNotificationAsync_GoalAboveType_ShouldSendCorrectEmail()
     {
         var rule = new AlertRule
         {
             Id = "def456",
             UserId = 2,
-            Type = nameof(AlertRuleType.BUDGET_ABOVE),
-            Channel = "budget@example.com",
+            Type = nameof(AlertRuleType.GOAL_ABOVE),
+            Channel = "goal@example.com",
             Threshold = 2000
         };
         var recordEvent = new RecordCreatedEvent
@@ -123,7 +123,7 @@ public class NotificationServiceTests
         await CreateService().SendAlertNotificationAsync(rule, recordEvent);
 
         await _emailSender.Received(1).SendAsync(Arg.Is<MimeMessage>(m =>
-            m.To.Mailboxes.Any(mb => mb.Address == "budget@example.com")));
+            m.To.Mailboxes.Any(mb => mb.Address == "goal@example.com")));
     }
 
     [Fact]
@@ -148,13 +148,13 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAlertNotificationAsync_BudgetAboveType_ShouldPublishWithCorrectTitle()
+    public async Task SendAlertNotificationAsync_GoalAboveType_ShouldPublishWithCorrectTitle()
     {
         var rule = new AlertRule
         {
             Id = "abc",
             UserId = 1,
-            Type = nameof(AlertRuleType.BUDGET_ABOVE),
+            Type = nameof(AlertRuleType.GOAL_ABOVE),
             Channel = "user@test.com",
             Threshold = 1000
         };
@@ -163,8 +163,8 @@ public class NotificationServiceTests
         await CreateService().SendAlertNotificationAsync(rule, recordEvent);
 
         await _notificationPublisher.Received(1).PublishAsync(
-            1, nameof(AlertRuleType.BUDGET_ABOVE),
-            "Alerta de Orçamento Excedido",
+            1, nameof(AlertRuleType.GOAL_ABOVE),
+            "Alerta de Meta Excedida",
             Arg.Any<string>(), Arg.Any<object>());
     }
 

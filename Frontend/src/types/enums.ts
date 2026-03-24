@@ -14,7 +14,7 @@ export enum FrequencyEnum {
 
 export enum AlertType {
   BALANCE_BELOW = 0,
-  BUDGET_ABOVE = 1,
+  GOAL_ABOVE = 1,
 }
 
 export enum OrderDirection {
@@ -38,5 +38,5 @@ export const FrequencyLabels: Record<FrequencyEnum, string> = {
 
 export const AlertTypeLabels: Record<AlertType, string> = {
   [AlertType.BALANCE_BELOW]: "Saldo abaixo de",
-  [AlertType.BUDGET_ABOVE]: "Orçamento acima de",
+  [AlertType.GOAL_ABOVE]: "Meta acima de",
 };

@@ -9,13 +9,19 @@ import { useAuth } from "../../hooks/useAuth";
 import { useApiError } from "../../hooks/useApiError";
 import { Input } from "../../components/Input";
 import { Button } from "../../components/Button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { handleError } = useApiError();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -31,7 +37,6 @@ export default function LoginPage() {
       const response = await authService.login(data);
       await login(response.access_token);
       toast.success("Login realizado com sucesso!");
-      navigate("/");
     } catch (error) {
       handleError(error, "Credenciais inválidas");
     } finally {

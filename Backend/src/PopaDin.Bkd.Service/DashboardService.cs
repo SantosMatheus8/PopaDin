@@ -9,7 +9,7 @@ namespace PopaDin.Bkd.Service;
 public class DashboardService(
     IDashboardRepository dashboardRepository,
     IDashboardCacheRepository cacheRepository,
-    IBudgetRepository budgetRepository,
+    IGoalRepository goalRepository,
     IUserRepository userRepository,
     IRecordRepository recordRepository,
     ILogger<DashboardService> logger) : IDashboardService
@@ -31,7 +31,7 @@ public class DashboardService(
         }
 
         var dashboardTask = dashboardRepository.GetDashboardDataAsync(userId, resolvedStart, resolvedEnd);
-        var budgetsTask = budgetRepository.GetBudgetsAsync(new ListBudgets
+        var goalsTask = goalRepository.GetGoalsAsync(new ListGoals
         {
             UserId = userId,
             Page = 1,
@@ -40,10 +40,10 @@ public class DashboardService(
         var userTask = userRepository.FindUserByIdAsync(userId);
         var recurringTask = recordRepository.GetRecurringRecordsAsync(userId);
 
-        await Task.WhenAll(dashboardTask, budgetsTask, userTask, recurringTask);
+        await Task.WhenAll(dashboardTask, goalsTask, userTask, recurringTask);
 
         var dashboard = dashboardTask.Result;
-        var budgets = budgetsTask.Result;
+        var goals = goalsTask.Result;
         var user = userTask.Result;
         var recurringRecords = recurringTask.Result;
 
@@ -128,23 +128,23 @@ public class DashboardService(
             dashboard.Summary.Balance = user.Balance;
         }
 
-        dashboard.Budgets = budgets.Lines
-            .Where(b => b.FinishAt == null)
-            .Select(b =>
+        dashboard.Goals = goals.Lines
+            .Where(g => g.FinishAt == null)
+            .Select(g =>
             {
                 var currentBalance = dashboard.Summary.Balance;
-                var usedPercentage = b.Goal > 0 ? Math.Round(currentBalance / b.Goal * 100, 2) : 0;
-                var status = usedPercentage >= 100 ? "exceeded"
-                    : usedPercentage >= 80 ? "alert"
+                var savedPercentage = g.TargetAmount > 0 ? Math.Round(currentBalance / g.TargetAmount * 100, 2) : 0;
+                var status = savedPercentage >= 100 ? "achieved"
+                    : savedPercentage >= 80 ? "close"
                     : "ok";
 
-                return new DashboardBudget
+                return new DashboardGoal
                 {
-                    Id = b.Id!.Value,
-                    Name = b.Name,
-                    Goal = b.Goal,
-                    TotalSpent = currentBalance,
-                    UsedPercentage = usedPercentage,
+                    Id = g.Id!.Value,
+                    Name = g.Name,
+                    TargetAmount = g.TargetAmount,
+                    TotalSaved = currentBalance,
+                    SavedPercentage = savedPercentage,
                     Status = status
                 };
             }).ToList();

@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (token: string) => {
     localStorage.setItem("access_token", token);
+    setIsLoading(true);
     await loadProfile();
   };
 
