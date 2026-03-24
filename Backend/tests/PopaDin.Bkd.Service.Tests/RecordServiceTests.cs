@@ -23,6 +23,7 @@ public class RecordServiceTests
     private readonly IInstallmentService _installmentService = Substitute.For<IInstallmentService>();
     private readonly IRecordEventPublisher _recordEventPublisher = Substitute.For<IRecordEventPublisher>();
     private readonly INotificationEventPublisher _notificationEventPublisher = Substitute.For<INotificationEventPublisher>();
+    private readonly IRecurrenceLogRepository _recurrenceLogRepository = Substitute.For<IRecurrenceLogRepository>();
     private readonly TimeProvider _timeProvider = Substitute.For<TimeProvider>();
     private readonly ILogger<RecordService> _logger = Substitute.For<ILogger<RecordService>>();
     private readonly RecordService _sut;
@@ -32,10 +33,15 @@ public class RecordServiceTests
     public RecordServiceTests()
     {
         _timeProvider.GetUtcNow().Returns(new DateTimeOffset(2024, 6, 15, 12, 0, 0, TimeSpan.Zero));
+
+        _recurrenceLogRepository
+            .GetMaterializedOccurrencesAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new HashSet<(string, DateTime)>());
+
         _sut = new RecordService(
             _recordRepository, _tagRepository, _tagCacheRepository, _dashboardCacheRepository,
             _userRepository, _balanceService, _installmentService,
-            _recordEventPublisher, _notificationEventPublisher, _timeProvider, _logger);
+            _recordEventPublisher, _notificationEventPublisher, _recurrenceLogRepository, _timeProvider, _logger);
     }
 
     private void SetupDefaultTagCache(int userId = UserId)

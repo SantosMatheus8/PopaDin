@@ -18,6 +18,7 @@ public class RecordService(
     IInstallmentService installmentService,
     IRecordEventPublisher recordEventPublisher,
     INotificationEventPublisher notificationEventPublisher,
+    IRecurrenceLogRepository recurrenceLogRepository,
     TimeProvider timeProvider,
     ILogger<RecordService> logger) : IRecordService
 {
@@ -219,17 +220,26 @@ public class RecordService(
         var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var monthEnd = monthStart.AddMonths(1).AddTicks(-1);
 
-        var nonRecurring = await repository.GetNonRecurringByPeriodAsync(userId, monthStart, monthEnd);
-        var recurring = await repository.GetRecurringRecordsAsync(userId);
+        var nonRecurringTask = repository.GetNonRecurringByPeriodAsync(userId, monthStart, monthEnd);
+        var recurringTask = repository.GetRecurringRecordsAsync(userId);
+        var materializedTask = recurrenceLogRepository.GetMaterializedOccurrencesAsync(monthStart, monthEnd);
 
-        var expenses = nonRecurring
+        await Task.WhenAll(nonRecurringTask, recurringTask, materializedTask);
+
+        // Records reais (OneTime + installments + materializados pelo worker)
+        var expenses = nonRecurringTask.Result
             .Where(r => r.Operation == OperationEnum.Outflow)
             .Sum(r => r.Value);
 
-        foreach (var record in recurring.Where(r => r.Operation == OperationEnum.Outflow))
+        // Projeções virtuais para ocorrências que o worker ainda não materializou
+        var materializedOccurrences = materializedTask.Result;
+        foreach (var record in recurringTask.Result.Where(r => r.Operation == OperationEnum.Outflow))
         {
             var occurrences = RecurrenceHelper.ProjectOccurrences(record, monthStart, monthEnd);
-            expenses += occurrences.Count * record.Value;
+            var unmaterialized = occurrences
+                .Count(date => !materializedOccurrences.Contains((record.Id!, date.Date)));
+
+            expenses += unmaterialized * record.Value;
         }
 
         return expenses;

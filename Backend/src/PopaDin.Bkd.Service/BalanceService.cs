@@ -1,7 +1,6 @@
 using PopaDin.Bkd.Domain.Interfaces.Repositories;
 using PopaDin.Bkd.Domain.Interfaces.Services;
 using PopaDin.Bkd.Domain.Models;
-using PopaDin.Bkd.Domain.Utils;
 
 namespace PopaDin.Bkd.Service;
 
@@ -48,11 +47,10 @@ public class BalanceService(
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
+        // Records recorrentes são apenas "templates". O impacto real no saldo
+        // vem dos records OneTime criados pelo RecurrenceService (worker).
         if (record.IsRecurring)
-        {
-            var occurrences = RecurrenceHelper.CountOccurrencesUpTo(record, now);
-            return occurrences * record.CalculateBalanceImpact();
-        }
+            return 0;
 
         var refDate = record.ReferenceDate ?? record.CreatedAt ?? now;
         if (refDate > now)

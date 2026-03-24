@@ -12,6 +12,7 @@ public class DashboardService(
     IGoalRepository goalRepository,
     IUserRepository userRepository,
     IRecordRepository recordRepository,
+    IRecurrenceLogRepository recurrenceLogRepository,
     ILogger<DashboardService> logger) : IDashboardService
 {
     public async Task<DashboardResult> GetDashboardAsync(int userId, DateTime? startDate, DateTime? endDate)
@@ -39,16 +40,25 @@ public class DashboardService(
         });
         var userTask = userRepository.FindUserByIdAsync(userId);
         var recurringTask = recordRepository.GetRecurringRecordsAsync(userId);
+        var materializedTask = recurrenceLogRepository.GetMaterializedOccurrencesAsync(resolvedStart, resolvedEnd);
 
-        await Task.WhenAll(dashboardTask, goalsTask, userTask, recurringTask);
+        await Task.WhenAll(dashboardTask, goalsTask, userTask, recurringTask, materializedTask);
 
         var dashboard = dashboardTask.Result;
         var goals = goalsTask.Result;
         var user = userTask.Result;
         var recurringRecords = recurringTask.Result;
+        var materializedOccurrences = materializedTask.Result;
 
+        // Projeta ocorrências recorrentes para o período completo,
+        // mas exclui as que já foram materializadas pelo RecurrenceService (worker).
+        // Isso garante que:
+        //   - Se o worker já rodou: usa o record real (editável pelo usuário), sem duplicar
+        //   - Se o worker ainda não rodou: projeção virtual preenche o gap
         var projectedRecords = recurringRecords
-            .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, resolvedStart, resolvedEnd))
+            .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, resolvedStart, resolvedEnd)
+                .Where(projected =>
+                    !materializedOccurrences.Contains((r.Id!, projected.ReferenceDate!.Value.Date))))
             .ToList();
 
         if (projectedRecords.Count > 0)
@@ -109,24 +119,8 @@ public class DashboardService(
             dashboard.TopOutflows = allTopOutflows;
         }
 
-        var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var isFuturePeriod = resolvedStart > currentMonthStart;
-
-        if (isFuturePeriod)
-        {
-            var cumulativeRecurringImpact = recurringRecords
-                .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, now, resolvedEnd))
-                .Sum(r => r.CalculateBalanceImpact());
-
-            var futureNonRecurring = await recordRepository.GetNonRecurringByPeriodAsync(userId, now, resolvedEnd);
-            var futureNonRecurringImpact = futureNonRecurring.Sum(r => r.CalculateBalanceImpact());
-
-            dashboard.Summary.Balance = user.Balance + cumulativeRecurringImpact + futureNonRecurringImpact;
-        }
-        else
-        {
-            dashboard.Summary.Balance = user.Balance;
-        }
+        dashboard.Summary.Balance = await CalculatePeriodBalanceAsync(
+            userId, resolvedEnd, now, recurringRecords, materializedOccurrences, user.Balance);
 
         dashboard.Goals = goals.Lines
             .Where(g => g.FinishAt == null)
@@ -152,5 +146,57 @@ public class DashboardService(
         await cacheRepository.SetAsync(userId, resolvedStart, resolvedEnd, dashboard);
 
         return dashboard;
+    }
+
+    /// <summary>
+    /// Calcula o saldo cumulativo até o fim do período solicitado.
+    /// - Mês atual: usa user.Balance (saldo armazenado e atualizado em tempo real)
+    /// - Mês passado: soma todos os records reais até o fim do período + projeções não materializadas
+    /// - Mês futuro: user.Balance + impacto projetado entre agora e o fim do período
+    /// </summary>
+    private async Task<decimal> CalculatePeriodBalanceAsync(
+        int userId,
+        DateTime periodEnd,
+        DateTime now,
+        List<Record> recurringRecords,
+        HashSet<(string SourceRecordId, DateTime OccurrenceDate)> materializedOccurrences,
+        decimal currentBalance)
+    {
+        var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var currentMonthEnd = currentMonthStart.AddMonths(1).AddTicks(-1);
+
+        // Mês atual: saldo real armazenado no banco
+        if (periodEnd >= currentMonthStart && periodEnd <= currentMonthEnd)
+            return currentBalance;
+
+        // Mês futuro: saldo atual + projeção futura
+        if (periodEnd > currentMonthEnd)
+        {
+            var futureRecurringImpact = recurringRecords
+                .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, now, periodEnd))
+                .Sum(r => r.CalculateBalanceImpact());
+
+            var futureNonRecurring = await recordRepository.GetNonRecurringByPeriodAsync(userId, now, periodEnd);
+            var futureNonRecurringImpact = futureNonRecurring.Sum(r => r.CalculateBalanceImpact());
+
+            return currentBalance + futureRecurringImpact + futureNonRecurringImpact;
+        }
+
+        // Mês passado: calcula saldo histórico
+        // 1. Soma de todos os records reais (OneTime + installments + materializados) até o fim do período
+        var cumulativeBalance = await recordRepository.GetCumulativeBalanceUpToAsync(userId, periodEnd);
+
+        // 2. Soma o impacto de projeções recorrentes que o worker ainda não materializou até o fim do período
+        var unmaterializedRecurringImpact = recurringRecords
+            .SelectMany(r =>
+            {
+                var beginningOfTime = r.ReferenceDate ?? r.CreatedAt ?? now;
+                return RecurrenceHelper.ProjectRecordsForPeriod(r, beginningOfTime, periodEnd)
+                    .Where(projected =>
+                        !materializedOccurrences.Contains((r.Id!, projected.ReferenceDate!.Value.Date)));
+            })
+            .Sum(r => r.CalculateBalanceImpact());
+
+        return cumulativeBalance + unmaterializedRecurringImpact;
     }
 }

@@ -1,0 +1,39 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace PopaDin.RecurrenceService.Documents;
+
+public class RecordDocument
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
+
+    public string Name { get; set; } = "";
+    public int UserId { get; set; }
+    public int Operation { get; set; }
+
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal Value { get; set; }
+
+    public int Frequency { get; set; }
+    public List<RecordTagSubDocument> Tags { get; set; } = [];
+    public DateTime ReferenceDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public string? InstallmentGroupId { get; set; }
+    public int? InstallmentIndex { get; set; }
+    public int? InstallmentTotal { get; set; }
+
+    public DateTime? RecurrenceEndDate { get; set; }
+}
+
+public class RecordTagSubDocument
+{
+    public int OriginalTagId { get; set; }
+    public string Name { get; set; } = "";
+    public int? TagType { get; set; }
+    public string? Description { get; set; }
+    public string? Color { get; set; }
+}

@@ -116,6 +116,7 @@ public static class ServiceModuleExtensions
         services.AddScoped<IUserCacheRepository, RedisUserCacheRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
+        services.AddScoped<IRecurrenceLogRepository, MongoRecurrenceLogRepository>();
         services.AddScoped<IExportBlobRepository, BlobExportRepository>();
 
         // Infrastructure

@@ -170,6 +170,49 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         return documents.Select(MapToRecord).ToList();
     }
 
+    public async Task<decimal> GetCumulativeBalanceUpToAsync(int userId, DateTime endDate)
+    {
+        logger.LogInformation("Calculando saldo cumulativo do usuário {UserId} até {EndDate}", userId, endDate);
+
+        var builder = Builders<RecordDocument>.Filter;
+
+        var notRecurring = builder.Or(
+            builder.Eq(r => r.Frequency, (int)FrequencyEnum.OneTime),
+            builder.And(
+                builder.Ne(r => r.InstallmentGroupId, (string?)null),
+                builder.Exists(r => r.InstallmentGroupId, true)
+            )
+        );
+
+        var filter = builder.Eq(r => r.UserId, userId)
+                     & builder.Lte(r => r.ReferenceDate, endDate)
+                     & notRecurring;
+
+        var pipeline = Collection.Aggregate()
+            .Match(filter)
+            .Group(new MongoDB.Bson.BsonDocument
+            {
+                { "_id", MongoDB.Bson.BsonNull.Value },
+                { "balance", new MongoDB.Bson.BsonDocument("$sum",
+                    new MongoDB.Bson.BsonDocument("$cond", new MongoDB.Bson.BsonArray
+                    {
+                        new MongoDB.Bson.BsonDocument("$eq", new MongoDB.Bson.BsonArray { "$Operation", (int)OperationEnum.Deposit }),
+                        "$Value",
+                        new MongoDB.Bson.BsonDocument("$multiply", new MongoDB.Bson.BsonArray { "$Value", -1 })
+                    }))
+                }
+            });
+
+        var result = await pipeline.FirstOrDefaultAsync();
+
+        if (result == null)
+            return 0;
+
+        return result["balance"].IsDecimal128
+            ? (decimal)result["balance"].AsDecimal128
+            : Convert.ToDecimal(result["balance"].ToDouble());
+    }
+
     private static FilterDefinition<RecordDocument> BuildFilter(ListRecords listRecords)
     {
         var builder = Builders<RecordDocument>.Filter;

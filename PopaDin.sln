@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Service.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.Bkd.Api.Tests", "Backend\tests\PopaDin.Bkd.Api.Tests\PopaDin.Bkd.Api.Tests.csproj", "{9B282E6E-D8C9-4E01-AE88-B2B1963AAA1D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PopaDin.RecurrenceService", "PopaDin.RecurrenceService", "{1B2F7663-ED21-ABB0-AB29-E2A577C41091}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopaDin.RecurrenceService", "PopaDin.RecurrenceService\PopaDin.RecurrenceService.csproj", "{EC500585-1177-40CA-ACA6-87398391AA4E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -163,6 +167,18 @@ Global
 		{9B282E6E-D8C9-4E01-AE88-B2B1963AAA1D}.Release|x64.Build.0 = Release|Any CPU
 		{9B282E6E-D8C9-4E01-AE88-B2B1963AAA1D}.Release|x86.ActiveCfg = Release|Any CPU
 		{9B282E6E-D8C9-4E01-AE88-B2B1963AAA1D}.Release|x86.Build.0 = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|x64.Build.0 = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|x64.ActiveCfg = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|x64.Build.0 = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC500585-1177-40CA-ACA6-87398391AA4E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -180,6 +196,7 @@ Global
 		{F57642F3-C37C-D174-720E-6A6AAD5BEE22} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{64EEF42E-C71B-43EE-B430-49BCEA234AA6} = {F57642F3-C37C-D174-720E-6A6AAD5BEE22}
 		{9B282E6E-D8C9-4E01-AE88-B2B1963AAA1D} = {F57642F3-C37C-D174-720E-6A6AAD5BEE22}
+		{EC500585-1177-40CA-ACA6-87398391AA4E} = {1B2F7663-ED21-ABB0-AB29-E2A577C41091}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {27993545-351D-4FE0-9BEC-06C556709EF7}

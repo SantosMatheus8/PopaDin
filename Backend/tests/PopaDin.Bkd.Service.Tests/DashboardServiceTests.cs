@@ -15,6 +15,7 @@ public class DashboardServiceTests
     private readonly IGoalRepository _goalRepository = Substitute.For<IGoalRepository>();
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IRecordRepository _recordRepository = Substitute.For<IRecordRepository>();
+    private readonly IRecurrenceLogRepository _recurrenceLogRepository = Substitute.For<IRecurrenceLogRepository>();
     private readonly ILogger<DashboardService> _logger = Substitute.For<ILogger<DashboardService>>();
     private readonly DashboardService _sut;
 
@@ -22,9 +23,13 @@ public class DashboardServiceTests
 
     public DashboardServiceTests()
     {
+        _recurrenceLogRepository
+            .GetMaterializedOccurrencesAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new HashSet<(string, DateTime)>());
+
         _sut = new DashboardService(
             _dashboardRepository, _cacheRepository, _goalRepository,
-            _userRepository, _recordRepository, _logger);
+            _userRepository, _recordRepository, _recurrenceLogRepository, _logger);
     }
 
     private DashboardResult CreateDefaultDashboard()
