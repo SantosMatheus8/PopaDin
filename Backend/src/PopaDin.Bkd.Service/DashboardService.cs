@@ -150,9 +150,9 @@ public class DashboardService(
 
     /// <summary>
     /// Calcula o saldo cumulativo até o fim do período solicitado.
-    /// - Mês atual: usa user.Balance (saldo armazenado e atualizado em tempo real)
-    /// - Mês passado: soma todos os records reais até o fim do período + projeções não materializadas
-    /// - Mês futuro: user.Balance + impacto projetado entre agora e o fim do período
+    /// Abordagem unificada para qualquer período (passado, atual ou futuro):
+    ///   Saldo = soma de todos records reais até periodEnd
+    ///         + projeções recorrentes não materializadas até periodEnd
     /// </summary>
     private async Task<decimal> CalculatePeriodBalanceAsync(
         int userId,
@@ -162,38 +162,21 @@ public class DashboardService(
         HashSet<(string SourceRecordId, DateTime OccurrenceDate)> materializedOccurrences,
         decimal currentBalance)
     {
-        var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var currentMonthEnd = currentMonthStart.AddMonths(1).AddTicks(-1);
-
-        // Mês atual: saldo real armazenado no banco
-        if (periodEnd >= currentMonthStart && periodEnd <= currentMonthEnd)
-            return currentBalance;
-
-        // Mês futuro: saldo atual + projeção futura
-        if (periodEnd > currentMonthEnd)
-        {
-            var futureRecurringImpact = recurringRecords
-                .SelectMany(r => RecurrenceHelper.ProjectRecordsForPeriod(r, now, periodEnd))
-                .Sum(r => r.CalculateBalanceImpact());
-
-            var futureNonRecurring = await recordRepository.GetNonRecurringByPeriodAsync(userId, now, periodEnd);
-            var futureNonRecurringImpact = futureNonRecurring.Sum(r => r.CalculateBalanceImpact());
-
-            return currentBalance + futureRecurringImpact + futureNonRecurringImpact;
-        }
-
-        // Mês passado: calcula saldo histórico
         // 1. Soma de todos os records reais (OneTime + installments + materializados) até o fim do período
         var cumulativeBalance = await recordRepository.GetCumulativeBalanceUpToAsync(userId, periodEnd);
 
-        // 2. Soma o impacto de projeções recorrentes que o worker ainda não materializou até o fim do período
+        // 2. Busca TODAS as ocorrências materializadas até o fim do período
+        //    (não apenas as do período visível do dashboard)
+        var allMaterialized = await recurrenceLogRepository.GetMaterializedOccurrencesUpToAsync(periodEnd);
+
+        // 3. Soma o impacto de projeções recorrentes não materializadas até o fim do período
         var unmaterializedRecurringImpact = recurringRecords
             .SelectMany(r =>
             {
-                var beginningOfTime = r.ReferenceDate ?? r.CreatedAt ?? now;
-                return RecurrenceHelper.ProjectRecordsForPeriod(r, beginningOfTime, periodEnd)
+                var baseDate = r.ReferenceDate ?? r.CreatedAt ?? now;
+                return RecurrenceHelper.ProjectRecordsForPeriod(r, baseDate, periodEnd)
                     .Where(projected =>
-                        !materializedOccurrences.Contains((r.Id!, projected.ReferenceDate!.Value.Date)));
+                        !allMaterialized.Contains((r.Id!, projected.ReferenceDate!.Value.Date)));
             })
             .Sum(r => r.CalculateBalanceImpact());
 

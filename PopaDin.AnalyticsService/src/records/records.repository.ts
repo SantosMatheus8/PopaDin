@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Record, RecordDocument } from './schemas/record.schema';
+import {
+  RecurrenceLog,
+  RecurrenceLogDocument,
+} from './schemas/recurrence-log.schema';
+
+export interface MaterializedOccurrence {
+  SourceRecordId: string;
+  OccurrenceDate: Date;
+}
 
 export interface LeanRecord {
   _id: Types.ObjectId;
@@ -30,6 +39,8 @@ export interface TagSpending {
 export class RecordsRepository {
   constructor(
     @InjectModel(Record.name) private readonly recordModel: Model<RecordDocument>,
+    @InjectModel(RecurrenceLog.name)
+    private readonly recurrenceLogModel: Model<RecurrenceLogDocument>,
   ) {}
 
   async getOutflowsByPeriod(userId: number, startDate: Date, endDate: Date): Promise<LeanRecord[]> {
@@ -103,6 +114,53 @@ export class RecordsRepository {
       })
       .lean<LeanRecord[]>()
       .exec();
+  }
+
+  async getCumulativeBalance(userId: number, upToDate: Date): Promise<number> {
+    const result = await this.recordModel.aggregate([
+      {
+        $match: {
+          UserId: userId,
+          ReferenceDate: { $lte: upToDate },
+          $or: [
+            { Frequency: 5 },
+            { InstallmentGroupId: { $ne: null, $exists: true } },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          balance: {
+            $sum: {
+              $cond: [
+                { $eq: ['$Operation', 1] },
+                { $toDouble: '$Value' },
+                { $multiply: [{ $toDouble: '$Value' }, -1] },
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].balance : 0;
+  }
+
+  async getMaterializedOccurrencesUpTo(
+    endDate: Date,
+  ): Promise<Set<string>> {
+    const logs = await this.recurrenceLogModel
+      .find({ OccurrenceDate: { $lte: endDate } })
+      .lean<MaterializedOccurrence[]>()
+      .exec();
+
+    const set = new Set<string>();
+    for (const log of logs) {
+      const dateKey = new Date(log.OccurrenceDate).toISOString().split('T')[0];
+      set.add(`${log.SourceRecordId}|${dateKey}`);
+    }
+    return set;
   }
 
   async getDistinctUserIdsWithRecentActivity(since: Date): Promise<number[]> {

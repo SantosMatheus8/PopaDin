@@ -70,6 +70,19 @@ public class UserController(IUserService userService) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{userId:int}/balance")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserResponse>> AdjustBalance(
+        [FromBody] AdjustBalanceRequest adjustBalanceRequest,
+        [FromRoute] int userId)
+    {
+        var authenticatedUserId = User.GetUserId();
+        User updatedUser = await userService.AdjustBalanceAsync(userId, authenticatedUserId, adjustBalanceRequest.Balance);
+        var userResponse = updatedUser.Adapt<UserResponse>();
+        return Ok(userResponse);
+    }
+
     [HttpPost("{userId:int}/profile-picture")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

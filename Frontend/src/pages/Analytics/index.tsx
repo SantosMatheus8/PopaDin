@@ -238,10 +238,16 @@ function ForecastCard({ forecast }: { forecast: ForecastData }) {
               </div>
             ))}
           </div>
-          {forecast.goesNegativeInMonths && (
+          {forecast.goesNegativeInMonths != null && forecast.goesNegativeInMonths >= 0 && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              Saldo pode ficar negativo em{" "}
-              <strong>{forecast.goesNegativeInMonths} meses</strong>
+              {forecast.goesNegativeInMonths === 0 ? (
+                <strong>Seu saldo está negativo</strong>
+              ) : (
+                <>
+                  Saldo pode ficar negativo em{" "}
+                  <strong>{forecast.goesNegativeInMonths} meses</strong>
+                </>
+              )}
             </div>
           )}
         </div>

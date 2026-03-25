@@ -41,13 +41,11 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   password: string;
-  balance?: number;
 }
 
 export interface UpdateUserRequest {
   name: string;
   password?: string;
-  balance: number;
 }
 
 export interface ListUsersRequest extends PaginationParams {

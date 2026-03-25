@@ -27,6 +27,10 @@ public class DashboardServiceTests
             .GetMaterializedOccurrencesAsync(Arg.Any<DateTime>(), Arg.Any<DateTime>())
             .Returns(new HashSet<(string, DateTime)>());
 
+        _recurrenceLogRepository
+            .GetMaterializedOccurrencesUpToAsync(Arg.Any<DateTime>())
+            .Returns(new HashSet<(string, DateTime)>());
+
         _sut = new DashboardService(
             _dashboardRepository, _cacheRepository, _goalRepository,
             _userRepository, _recordRepository, _recurrenceLogRepository, _logger);
@@ -57,6 +61,8 @@ public class DashboardServiceTests
             .Returns(new User { Id = UserId, Balance = 3000 });
         _recordRepository.GetRecurringRecordsAsync(UserId)
             .Returns(new List<Record>());
+        _recordRepository.GetCumulativeBalanceUpToAsync(UserId, Arg.Any<DateTime>())
+            .Returns(3000m);
     }
 
     #region GetDashboardAsync
@@ -131,6 +137,7 @@ public class DashboardServiceTests
         });
         _userRepository.FindUserByIdAsync(UserId).Returns(new User { Id = UserId, Balance = 3000 });
         _recordRepository.GetRecurringRecordsAsync(UserId).Returns(new List<Record>());
+        _recordRepository.GetCumulativeBalanceUpToAsync(UserId, Arg.Any<DateTime>()).Returns(3000m);
 
         var result = await _sut.GetDashboardAsync(UserId, null, null);
 
@@ -152,6 +159,7 @@ public class DashboardServiceTests
             TotalItems = 0
         });
         _userRepository.FindUserByIdAsync(UserId).Returns(new User { Id = UserId, Balance = 3000 });
+        _recordRepository.GetCumulativeBalanceUpToAsync(UserId, Arg.Any<DateTime>()).Returns(3000m);
 
         var recurringRecords = new List<Record>
         {

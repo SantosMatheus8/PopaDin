@@ -6,7 +6,6 @@ describe("updateUserSchema", () => {
     const result = updateUserSchema.safeParse({
       name: "João",
       password: "123456",
-      balance: 100,
     });
     expect(result.success).toBe(true);
   });
@@ -14,7 +13,6 @@ describe("updateUserSchema", () => {
   it("deve validar sem password (opcional)", () => {
     const result = updateUserSchema.safeParse({
       name: "João",
-      balance: 100,
     });
     expect(result.success).toBe(true);
   });
@@ -23,7 +21,6 @@ describe("updateUserSchema", () => {
     const result = updateUserSchema.safeParse({
       name: "João",
       password: "",
-      balance: 100,
     });
     expect(result.success).toBe(true);
   });
@@ -31,15 +28,6 @@ describe("updateUserSchema", () => {
   it("deve rejeitar nome vazio", () => {
     const result = updateUserSchema.safeParse({
       name: "",
-      balance: 100,
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("deve rejeitar balance negativo", () => {
-    const result = updateUserSchema.safeParse({
-      name: "João",
-      balance: -1,
     });
     expect(result.success).toBe(false);
   });
@@ -48,7 +36,6 @@ describe("updateUserSchema", () => {
     const result = updateUserSchema.safeParse({
       name: "João",
       password: "12345",
-      balance: 100,
     });
     expect(result.success).toBe(false);
   });

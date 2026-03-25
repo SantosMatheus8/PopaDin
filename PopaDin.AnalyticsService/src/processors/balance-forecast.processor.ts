@@ -8,6 +8,7 @@ import {
   getMonthRange,
   getEndOfNextMonth,
   getFrequencyMonths,
+  projectOccurrences,
 } from '../analytics/interfaces/insight.interface';
 
 @Injectable()
@@ -24,16 +25,41 @@ export class BalanceForecastProcessor implements InsightProcessor {
       const periodStart = threeMonthsAgo.start;
       const periodEnd = currentMonth.end;
 
-      const [allRecords, recurringRecords] = await Promise.all([
-        this.recordsRepository.getAllRecordsInPeriod(userId, periodStart, periodEnd),
-        this.recordsRepository.getRecurringRecords(userId),
-      ]);
+      const [allRecords, recurringRecords, cumulativeBalance, materializedSet] =
+        await Promise.all([
+          this.recordsRepository.getAllRecordsInPeriod(userId, periodStart, periodEnd),
+          this.recordsRepository.getRecurringRecords(userId),
+          this.recordsRepository.getCumulativeBalance(userId, currentMonth.end),
+          this.recordsRepository.getMaterializedOccurrencesUpTo(currentMonth.end),
+        ]);
 
-      let currentBalance = 0;
-      for (const record of allRecords) {
+      // Calculate unmaterialized recurring impact (same logic as C# dashboard)
+      let unmaterializedRecurringImpact = 0;
+      for (const record of recurringRecords) {
+        const baseDate = record.ReferenceDate ?? record.CreatedAt;
+        if (!baseDate) continue;
+
+        const occurrences = projectOccurrences(
+          baseDate,
+          record.Frequency,
+          currentMonth.end,
+          record.RecurrenceEndDate,
+        );
+
+        const recordId = record._id.toString();
         const value = toDecimalValue(record.Value);
-        currentBalance += record.Operation === 1 ? value : -value;
+
+        for (const occurrence of occurrences) {
+          const dateKey = occurrence.toISOString().split('T')[0];
+          const key = `${recordId}|${dateKey}`;
+          if (!materializedSet.has(key)) {
+            unmaterializedRecurringImpact +=
+              record.Operation === 1 ? value : -value;
+          }
+        }
       }
+
+      const currentBalance = cumulativeBalance + unmaterializedRecurringImpact;
 
       let monthlyRecurringIncome = 0;
       let monthlyRecurringExpenses = 0;
@@ -68,12 +94,16 @@ export class BalanceForecastProcessor implements InsightProcessor {
       }));
 
       let goesNegativeInMonths: number | null = null;
-      if (monthlyNet < 0 && currentBalance > 0) {
+      if (currentBalance <= 0) {
+        goesNegativeInMonths = 0;
+      } else if (monthlyNet < 0) {
         goesNegativeInMonths = Math.ceil(currentBalance / Math.abs(monthlyNet));
       }
 
       let severity: InsightSeverity = 'info';
-      if (goesNegativeInMonths !== null && goesNegativeInMonths <= 3) {
+      if (currentBalance <= 0) {
+        severity = 'critical';
+      } else if (goesNegativeInMonths !== null && goesNegativeInMonths <= 3) {
         severity = 'critical';
       } else if (goesNegativeInMonths !== null && goesNegativeInMonths <= 6) {
         severity = 'warning';

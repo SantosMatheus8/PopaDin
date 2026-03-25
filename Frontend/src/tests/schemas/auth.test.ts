@@ -29,16 +29,6 @@ describe("registerSchema", () => {
       name: "João",
       email: "joao@test.com",
       password: "123456",
-      balance: 100,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("deve validar sem balance (opcional)", () => {
-    const result = registerSchema.safeParse({
-      name: "João",
-      email: "joao@test.com",
-      password: "123456",
     });
     expect(result.success).toBe(true);
   });
@@ -57,16 +47,6 @@ describe("registerSchema", () => {
       name: "João",
       email: "joao@test.com",
       password: "12345",
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("deve rejeitar balance negativo", () => {
-    const result = registerSchema.safeParse({
-      name: "João",
-      email: "joao@test.com",
-      password: "123456",
-      balance: -1,
     });
     expect(result.success).toBe(false);
   });

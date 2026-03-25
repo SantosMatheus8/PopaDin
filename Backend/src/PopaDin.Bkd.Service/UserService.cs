@@ -58,7 +58,6 @@ public class UserService(
         User user = await FindUserOrThrowAsync(userId);
 
         user.Name = updateUserRequest.Name;
-        user.Balance = updateUserRequest.Balance;
 
         if (!string.IsNullOrEmpty(updateUserRequest.Password))
         {
@@ -77,6 +76,18 @@ public class UserService(
         await FindUserOrThrowAsync(userId);
         await repository.DeleteUserAsync(userId);
         await cacheRepository.InvalidateAsync(userId);
+    }
+
+    public async Task<User> AdjustBalanceAsync(int userId, int authenticatedUserId, decimal newBalance)
+    {
+        logger.LogInformation("Ajustando saldo do User: {UserId}", userId);
+        ValidateUserOwnership(userId, authenticatedUserId);
+        await FindUserOrThrowAsync(userId);
+
+        await repository.SetBalanceAsync(userId, newBalance);
+        await cacheRepository.InvalidateAsync(userId);
+
+        return await repository.FindUserByIdAsync(userId);
     }
 
     public async Task<string> UploadProfilePictureAsync(int userId, int authenticatedUserId, Stream fileStream, string contentType)

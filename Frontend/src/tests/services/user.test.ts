@@ -48,7 +48,7 @@ describe("userService", () => {
   });
 
   it("deve atualizar usuário com PUT /user/:id", async () => {
-    const data = { name: "João Atualizado", balance: 200 };
+    const data = { name: "João Atualizado" };
     vi.mocked(api.put).mockResolvedValue({ data: { id: 1, ...data } });
 
     const result = await userService.update(1, data as any);

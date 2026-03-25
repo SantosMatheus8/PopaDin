@@ -21,7 +21,7 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { balance: 0 },
+    defaultValues: {},
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -69,14 +69,6 @@ export default function RegisterPage() {
             showPasswordToggle
             error={errors.password?.message}
             {...register("password")}
-          />
-          <Input
-            label="Saldo inicial"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            error={errors.balance?.message}
-            {...register("balance", { valueAsNumber: true })}
           />
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Criando conta..." : "Criar conta"}

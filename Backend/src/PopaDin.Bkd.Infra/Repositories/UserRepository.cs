@@ -211,4 +211,25 @@ public class UserRepository(IDbConnectionFactory connectionFactory, ILogger<User
             throw;
         }
     }
+
+    public async Task SetBalanceAsync(int userId, decimal balance)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            logger.LogInformation("Definindo Balance do User: {UserId} para {Balance}", userId, balance);
+            await connection.ExecuteAsync(UserQueries.SetBalance,
+                new { UserId = userId, Balance = balance, UpdatedAt = DateTime.UtcNow },
+                transaction);
+            transaction.Commit();
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            logger.LogError("Erro ao definir Balance do User: {Message}", e.Message);
+            throw;
+        }
+    }
 }

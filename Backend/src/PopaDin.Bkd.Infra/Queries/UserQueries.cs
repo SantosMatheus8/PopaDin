@@ -64,6 +64,12 @@ public static class UserQueries
             UpdatedAt = @UpdatedAt
         WHERE Id = @UserId";
 
+    public const string SetBalance = @"
+        UPDATE [User]
+        SET Balance = @Balance,
+            UpdatedAt = @UpdatedAt
+        WHERE Id = @UserId";
+
         public const string FindUserByEmail = @"
         SELECT
             u.Id AS Id,

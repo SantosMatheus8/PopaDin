@@ -26,4 +26,18 @@ public class MongoRecurrenceLogRepository(
             .Select(l => (l.SourceRecordId, l.OccurrenceDate.Date))
             .ToHashSet();
     }
+
+    public async Task<HashSet<(string SourceRecordId, DateTime OccurrenceDate)>> GetMaterializedOccurrencesUpToAsync(
+        DateTime endDate)
+    {
+        logger.LogInformation("Buscando ocorrências materializadas até {EndDate}", endDate);
+
+        var filter = Builders<RecurrenceLogDocument>.Filter.Lte(l => l.OccurrenceDate, endDate);
+
+        var logs = await Collection.Find(filter).ToListAsync();
+
+        return logs
+            .Select(l => (l.SourceRecordId, l.OccurrenceDate.Date))
+            .ToHashSet();
+    }
 }

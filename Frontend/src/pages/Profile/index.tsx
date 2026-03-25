@@ -29,7 +29,7 @@ export default function ProfilePage() {
     formState: { errors },
   } = useForm<UpdateUserFormData>({
     resolver: zodResolver(updateUserSchema),
-    values: user ? { name: user.name, balance: user.balance, password: "" } : undefined,
+    values: user ? { name: user.name, password: "" } : undefined,
   });
 
   const updateMutation = useMutation({
@@ -37,7 +37,6 @@ export default function ProfilePage() {
       if (!user) throw new Error("User not found");
       const payload = {
         name: data.name,
-        balance: data.balance,
         password: data.password || undefined,
       };
       return userService.update(user.id, payload);
@@ -171,13 +170,6 @@ export default function ProfilePage() {
             label="Nome"
             error={errors.name?.message}
             {...register("name")}
-          />
-          <Input
-            label="Saldo"
-            type="number"
-            step="0.01"
-            error={errors.balance?.message}
-            {...register("balance", { valueAsNumber: true })}
           />
           <Input
             label="Nova senha (deixe em branco para manter)"

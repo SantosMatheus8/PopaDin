@@ -54,3 +54,32 @@ const FREQUENCY_MONTHS: Record<number, number> = {
 export function getFrequencyMonths(frequency: number): number {
   return FREQUENCY_MONTHS[frequency] ?? 0;
 }
+
+/**
+ * Projects all occurrence dates for a recurring record from its base date up to periodEnd.
+ * Mirrors RecurrenceHelper.ProjectOccurrences from the C# backend.
+ */
+export function projectOccurrences(
+  baseDate: Date,
+  frequency: number,
+  periodEnd: Date,
+  recurrenceEndDate?: Date | null,
+): Date[] {
+  const interval = FREQUENCY_MONTHS[frequency];
+  if (!interval) return [];
+
+  const endLimit =
+    recurrenceEndDate && recurrenceEndDate < periodEnd
+      ? recurrenceEndDate
+      : periodEnd;
+
+  const occurrences: Date[] = [];
+  let current = new Date(baseDate);
+
+  while (current <= endLimit) {
+    occurrences.push(new Date(current));
+    current = new Date(current.getFullYear(), current.getMonth() + interval, current.getDate());
+  }
+
+  return occurrences;
+}

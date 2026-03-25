@@ -33,7 +33,13 @@ public class UpdateUserRequestValidator : AbstractValidator<UpdateUserRequest>
         RuleFor(x => x.Password)
             .MinimumLength(6).WithMessage("A senha deve ter no mínimo 6 caracteres")
             .When(x => !string.IsNullOrEmpty(x.Password));
+    }
+}
 
+public class AdjustBalanceRequestValidator : AbstractValidator<AdjustBalanceRequest>
+{
+    public AdjustBalanceRequestValidator()
+    {
         RuleFor(x => x.Balance)
             .GreaterThanOrEqualTo(0).WithMessage("Saldo deve ser maior ou igual a zero");
     }
