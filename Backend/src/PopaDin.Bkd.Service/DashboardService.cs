@@ -143,9 +143,43 @@ public class DashboardService(
                 };
             }).ToList();
 
+        dashboard.Comparison = await BuildComparisonAsync(userId, resolvedStart, resolvedEnd, dashboard.Summary);
+        dashboard.MonthlyTrend = await BuildMonthlyTrendAsync(userId, resolvedStart);
+
         await cacheRepository.SetAsync(userId, resolvedStart, resolvedEnd, dashboard);
 
         return dashboard;
+    }
+
+    private async Task<DashboardComparison> BuildComparisonAsync(
+        int userId, DateTime periodStart, DateTime periodEnd, DashboardSummary currentSummary)
+    {
+        var periodLength = periodEnd - periodStart;
+        var previousStart = periodStart - periodLength - TimeSpan.FromTicks(1);
+        var previousEnd = periodStart - TimeSpan.FromTicks(1);
+
+        var previousSummary = await dashboardRepository.GetPeriodSummaryAsync(userId, previousStart, previousEnd);
+
+        static decimal ChangePercent(decimal current, decimal previous) =>
+            previous == 0 ? 0 : Math.Round((current - previous) / previous * 100, 2);
+
+        return new DashboardComparison
+        {
+            PreviousTotalDeposits = previousSummary.TotalDeposits,
+            PreviousTotalOutflows = previousSummary.TotalOutflows,
+            DepositsChangePercent = ChangePercent(currentSummary.TotalDeposits, previousSummary.TotalDeposits),
+            OutflowsChangePercent = ChangePercent(currentSummary.TotalOutflows, previousSummary.TotalOutflows)
+        };
+    }
+
+    private async Task<List<DashboardMonthlyTrend>> BuildMonthlyTrendAsync(int userId, DateTime periodStart)
+    {
+        // Busca os últimos 6 meses completos até o início do período selecionado
+        var trendEnd = periodStart.AddMonths(1).AddTicks(-1);
+        var trendStart = new DateTime(periodStart.Year, periodStart.Month, 1, 0, 0, 0, DateTimeKind.Utc)
+            .AddMonths(-5);
+
+        return await dashboardRepository.GetMonthlyTrendAsync(userId, trendStart, trendEnd);
     }
 
     /// <summary>

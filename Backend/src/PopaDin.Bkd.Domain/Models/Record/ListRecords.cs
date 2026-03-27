@@ -13,4 +13,12 @@ public class ListRecords
     public RecordOrderBy OrderBy { get; set; }
     public int Page { get; set; } = 1;
     public int ItemsPerPage { get; set; } = 20;
+
+    // Filtros avançados
+    public string? Name { get; set; }
+    public decimal? MinValue { get; set; }
+    public decimal? MaxValue { get; set; }
+    public List<int>? TagIds { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 }

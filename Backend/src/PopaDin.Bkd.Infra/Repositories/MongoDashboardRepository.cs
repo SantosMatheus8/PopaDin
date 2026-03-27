@@ -140,6 +140,137 @@ public class MongoDashboardRepository(IMongoDatabase database, ILogger<MongoDash
         return result;
     }
 
+    public async Task<DashboardSummary> GetPeriodSummaryAsync(int userId, DateTime startDate, DateTime endDate)
+    {
+        logger.LogInformation("Buscando resumo do período no MongoDB para o usuário {UserId}", userId);
+
+        var builder = Builders<RecordDocument>.Filter;
+
+        var notRecurring = builder.Or(
+            builder.Eq(r => r.Frequency, (int)FrequencyEnum.OneTime),
+            builder.And(
+                builder.Ne(r => r.InstallmentGroupId, (string?)null),
+                builder.Exists(r => r.InstallmentGroupId, true)
+            )
+        );
+
+        var matchFilter = builder.Eq(r => r.UserId, userId)
+                          & builder.Gte(r => r.ReferenceDate, startDate)
+                          & builder.Lte(r => r.ReferenceDate, endDate)
+                          & notRecurring;
+
+        var pipeline = Collection.Aggregate()
+            .Match(matchFilter)
+            .Group(new BsonDocument
+            {
+                { "_id", BsonNull.Value },
+                { "totalDeposits", new BsonDocument("$sum", new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Deposit }),
+                        "$Value",
+                        0
+                    }))
+                },
+                { "totalOutflows", new BsonDocument("$sum", new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Outflow }),
+                        "$Value",
+                        0
+                    }))
+                },
+                { "recordCount", new BsonDocument("$sum", 1) }
+            });
+
+        var doc = await pipeline.FirstOrDefaultAsync();
+
+        if (doc == null)
+            return new DashboardSummary();
+
+        var deposits = doc["totalDeposits"].IsDecimal128
+            ? (decimal)doc["totalDeposits"].AsDecimal128
+            : Convert.ToDecimal(doc["totalDeposits"].ToDouble());
+
+        var outflows = doc["totalOutflows"].IsDecimal128
+            ? (decimal)doc["totalOutflows"].AsDecimal128
+            : Convert.ToDecimal(doc["totalOutflows"].ToDouble());
+
+        return new DashboardSummary
+        {
+            TotalDeposits = deposits,
+            TotalOutflows = outflows,
+            RecordCount = doc["recordCount"].AsInt32,
+            Balance = deposits - outflows
+        };
+    }
+
+    public async Task<List<DashboardMonthlyTrend>> GetMonthlyTrendAsync(int userId, DateTime startDate, DateTime endDate)
+    {
+        logger.LogInformation("Buscando tendência mensal no MongoDB para o usuário {UserId}", userId);
+
+        var builder = Builders<RecordDocument>.Filter;
+
+        var notRecurring = builder.Or(
+            builder.Eq(r => r.Frequency, (int)FrequencyEnum.OneTime),
+            builder.And(
+                builder.Ne(r => r.InstallmentGroupId, (string?)null),
+                builder.Exists(r => r.InstallmentGroupId, true)
+            )
+        );
+
+        var matchFilter = builder.Eq(r => r.UserId, userId)
+                          & builder.Gte(r => r.ReferenceDate, startDate)
+                          & builder.Lte(r => r.ReferenceDate, endDate)
+                          & notRecurring;
+
+        var pipeline = Collection.Aggregate()
+            .Match(matchFilter)
+            .Group(new BsonDocument
+            {
+                { "_id", new BsonDocument
+                    {
+                        { "year", new BsonDocument("$year", "$ReferenceDate") },
+                        { "month", new BsonDocument("$month", "$ReferenceDate") }
+                    }
+                },
+                { "totalDeposits", new BsonDocument("$sum", new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Deposit }),
+                        "$Value",
+                        0
+                    }))
+                },
+                { "totalOutflows", new BsonDocument("$sum", new BsonDocument("$cond", new BsonArray
+                    {
+                        new BsonDocument("$eq", new BsonArray { "$Operation", (int)OperationEnum.Outflow }),
+                        "$Value",
+                        0
+                    }))
+                }
+            })
+            .Sort(new BsonDocument { { "_id.year", 1 }, { "_id.month", 1 } });
+
+        var docs = await pipeline.ToListAsync();
+
+        return docs.Select(d =>
+        {
+            var deposits = d["totalDeposits"].IsDecimal128
+                ? (decimal)d["totalDeposits"].AsDecimal128
+                : Convert.ToDecimal(d["totalDeposits"].ToDouble());
+
+            var outflows = d["totalOutflows"].IsDecimal128
+                ? (decimal)d["totalOutflows"].AsDecimal128
+                : Convert.ToDecimal(d["totalOutflows"].ToDouble());
+
+            return new DashboardMonthlyTrend
+            {
+                Year = d["_id"]["year"].AsInt32,
+                Month = d["_id"]["month"].AsInt32,
+                TotalDeposits = deposits,
+                TotalOutflows = outflows
+            };
+        }).ToList();
+    }
+
     private static Record MapBsonToRecord(BsonDocument doc)
     {
         return new Record

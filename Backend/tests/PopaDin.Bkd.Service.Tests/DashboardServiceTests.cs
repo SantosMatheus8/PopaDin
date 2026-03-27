@@ -55,6 +55,14 @@ public class DashboardServiceTests
 
         _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
             .Returns(dashboard);
+        _dashboardRepository.GetPeriodSummaryAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new DashboardSummary { TotalDeposits = 4000, TotalOutflows = 1800 });
+        _dashboardRepository.GetMonthlyTrendAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new List<DashboardMonthlyTrend>
+            {
+                new() { Year = 2024, Month = 1, TotalDeposits = 4000, TotalOutflows = 1500 },
+                new() { Year = 2024, Month = 2, TotalDeposits = 5000, TotalOutflows = 2000 }
+            });
         _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>())
             .Returns(new PaginatedResult<Goal> { Lines = new List<Goal>(), Page = 1, TotalItems = 0 });
         _userRepository.FindUserByIdAsync(UserId)
@@ -143,6 +151,99 @@ public class DashboardServiceTests
 
         result.Goals.Should().HaveCount(1);
         result.Goals[0].Name.Should().Be("Savings");
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ShouldPopulateComparison()
+    {
+        _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
+        SetupDefaultRepositories();
+
+        var result = await _sut.GetDashboardAsync(UserId, null, null);
+
+        result.Comparison.Should().NotBeNull();
+        result.Comparison!.PreviousTotalDeposits.Should().Be(4000);
+        result.Comparison.PreviousTotalOutflows.Should().Be(1800);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ComparisonDepositsChangePercent_ShouldBeCorrect()
+    {
+        _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
+
+        var dashboard = CreateDefaultDashboard(); // TotalDeposits = 5000
+        _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(dashboard);
+        _dashboardRepository.GetPeriodSummaryAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new DashboardSummary { TotalDeposits = 4000, TotalOutflows = 2000 }); // previous = 4000
+        _dashboardRepository.GetMonthlyTrendAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new List<DashboardMonthlyTrend>());
+        _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>())
+            .Returns(new PaginatedResult<Goal> { Lines = new List<Goal>(), Page = 1, TotalItems = 0 });
+        _userRepository.FindUserByIdAsync(UserId).Returns(new User { Id = UserId, Balance = 3000 });
+        _recordRepository.GetRecurringRecordsAsync(UserId).Returns(new List<Record>());
+        _recordRepository.GetCumulativeBalanceUpToAsync(UserId, Arg.Any<DateTime>()).Returns(3000m);
+
+        var result = await _sut.GetDashboardAsync(UserId, null, null);
+
+        // (5000 - 4000) / 4000 * 100 = 25%
+        result.Comparison!.DepositsChangePercent.Should().Be(25m);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ComparisonWithZeroPreviousDeposits_ShouldReturnZeroPercent()
+    {
+        _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
+
+        var dashboard = CreateDefaultDashboard();
+        _dashboardRepository.GetDashboardDataAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(dashboard);
+        _dashboardRepository.GetPeriodSummaryAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new DashboardSummary { TotalDeposits = 0, TotalOutflows = 0 });
+        _dashboardRepository.GetMonthlyTrendAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>())
+            .Returns(new List<DashboardMonthlyTrend>());
+        _goalRepository.GetGoalsAsync(Arg.Any<ListGoals>())
+            .Returns(new PaginatedResult<Goal> { Lines = new List<Goal>(), Page = 1, TotalItems = 0 });
+        _userRepository.FindUserByIdAsync(UserId).Returns(new User { Id = UserId, Balance = 3000 });
+        _recordRepository.GetRecurringRecordsAsync(UserId).Returns(new List<Record>());
+        _recordRepository.GetCumulativeBalanceUpToAsync(UserId, Arg.Any<DateTime>()).Returns(3000m);
+
+        var result = await _sut.GetDashboardAsync(UserId, null, null);
+
+        result.Comparison!.DepositsChangePercent.Should().Be(0);
+        result.Comparison.OutflowsChangePercent.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ShouldPopulateMonthlyTrend()
+    {
+        _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
+        SetupDefaultRepositories();
+
+        var result = await _sut.GetDashboardAsync(UserId, null, null);
+
+        result.MonthlyTrend.Should().HaveCount(2);
+        result.MonthlyTrend[0].Year.Should().Be(2024);
+        result.MonthlyTrend[0].Month.Should().Be(1);
+        result.MonthlyTrend[0].TotalDeposits.Should().Be(4000);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_ShouldCallGetMonthlyTrendWithLast6Months()
+    {
+        _cacheRepository.GetAsync(UserId, Arg.Any<DateTime>(), Arg.Any<DateTime>()).Returns((DashboardResult?)null);
+        SetupDefaultRepositories();
+
+        var periodStart = new DateTime(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var periodEnd = new DateTime(2024, 6, 30, 23, 59, 59, DateTimeKind.Utc);
+
+        await _sut.GetDashboardAsync(UserId, periodStart, periodEnd);
+
+        // Trend should start 5 months before June 2024 = January 2024
+        await _dashboardRepository.Received(1).GetMonthlyTrendAsync(
+            UserId,
+            new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            Arg.Any<DateTime>());
     }
 
     [Fact]

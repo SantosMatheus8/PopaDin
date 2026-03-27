@@ -227,6 +227,25 @@ public class MongoRecordRepository(IMongoDatabase database, ILogger<MongoRecordR
         if (listRecords.Frequency.HasValue)
             filter &= builder.Eq(r => r.Frequency, (int)listRecords.Frequency.Value);
 
+        if (!string.IsNullOrWhiteSpace(listRecords.Name))
+            filter &= builder.Regex(r => r.Name, new MongoDB.Bson.BsonRegularExpression(listRecords.Name, "i"));
+
+        if (listRecords.MinValue.HasValue)
+            filter &= builder.Gte(r => r.Value, listRecords.MinValue.Value);
+
+        if (listRecords.MaxValue.HasValue)
+            filter &= builder.Lte(r => r.Value, listRecords.MaxValue.Value);
+
+        if (listRecords.TagIds is { Count: > 0 })
+            filter &= builder.ElemMatch(r => r.Tags,
+                Builders<RecordTagSubDocument>.Filter.In(t => t.OriginalTagId, listRecords.TagIds));
+
+        if (listRecords.StartDate.HasValue)
+            filter &= builder.Gte(r => r.ReferenceDate, listRecords.StartDate.Value);
+
+        if (listRecords.EndDate.HasValue)
+            filter &= builder.Lte(r => r.ReferenceDate, listRecords.EndDate.Value);
+
         return filter;
     }
 

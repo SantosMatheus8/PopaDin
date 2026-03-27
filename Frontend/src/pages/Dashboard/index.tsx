@@ -11,6 +11,9 @@ import {
   AlertTriangle,
   Info,
   AlertCircle,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
 import { dashboardService } from "../../services/dashboard";
 import { analyticsService, InsightResponse } from "../../services/analytics";
@@ -85,7 +88,7 @@ export default function DashboardPage() {
 
   if (!data) return <EmptyState title="Erro ao carregar dashboard" />;
 
-  const { summary, goals, spendingByTag, latestRecords } = data;
+  const { summary, goals, spendingByTag, latestRecords, comparison, monthlyTrend } = data;
 
   const activeGoals = goals.filter((g) => g.status !== undefined);
 
@@ -175,6 +178,74 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Comparison vs previous period */}
+      {comparison && !isProjection && (
+        <Card>
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Comparativo com período anterior</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[
+              { label: "Receitas", current: summary.totalDeposits, change: comparison.depositsChangePercent },
+              { label: "Despesas", current: summary.totalOutflows, change: comparison.outflowsChangePercent },
+            ].map(({ label, current, change }) => {
+              const positive = change > 0;
+              const neutral = change === 0;
+              const Icon = neutral ? Minus : positive ? ArrowUp : ArrowDown;
+              const changeColor = label === "Receitas"
+                ? (positive ? "text-green-600" : neutral ? "text-gray-400" : "text-red-500")
+                : (positive ? "text-red-500" : neutral ? "text-gray-400" : "text-green-600");
+              return (
+                <div key={label} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                  <span className="text-sm text-gray-600">{label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">{formatCurrency(current)}</span>
+                    <span className={`flex items-center gap-0.5 text-xs font-medium ${changeColor}`}>
+                      <Icon className="h-3 w-3" />
+                      {Math.abs(change)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Monthly Trend */}
+      {monthlyTrend && monthlyTrend.length > 1 && (
+        <Card>
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Evolução mensal (últimos 6 meses)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-gray-500">
+                  <th className="pb-2 font-medium">Mês</th>
+                  <th className="pb-2 font-medium text-right">Receitas</th>
+                  <th className="pb-2 font-medium text-right">Despesas</th>
+                  <th className="pb-2 font-medium text-right">Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTrend.map((trend) => {
+                  const balance = trend.totalDeposits - trend.totalOutflows;
+                  const monthLabel = new Date(trend.year, trend.month - 1, 1)
+                    .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+                  return (
+                    <tr key={`${trend.year}-${trend.month}`} className="border-b last:border-0">
+                      <td className="py-2 capitalize text-gray-700">{monthLabel}</td>
+                      <td className="py-2 text-right font-medium text-green-600">{formatCurrency(trend.totalDeposits)}</td>
+                      <td className="py-2 text-right font-medium text-red-600">{formatCurrency(trend.totalOutflows)}</td>
+                      <td className={`py-2 text-right font-semibold ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        {formatCurrency(balance)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Goals */}

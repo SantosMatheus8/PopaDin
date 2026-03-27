@@ -151,6 +151,12 @@ export interface ListRecordsRequest extends PaginationParams {
   operation?: OperationEnum;
   frequency?: FrequencyEnum;
   orderBy?: "Id" | "CreatedAt" | "Frequency" | "Value" | "Operation";
+  name?: string;
+  minValue?: number;
+  maxValue?: number;
+  tagIds?: number[];
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ExportRecordsRequest {
@@ -264,6 +270,20 @@ export interface DashboardSpendingByTagResponse {
   totalSpent: number;
 }
 
+export interface DashboardComparisonResponse {
+  previousTotalDeposits: number;
+  previousTotalOutflows: number;
+  depositsChangePercent: number;
+  outflowsChangePercent: number;
+}
+
+export interface DashboardMonthlyTrendResponse {
+  year: number;
+  month: number;
+  totalDeposits: number;
+  totalOutflows: number;
+}
+
 export interface DashboardResponse {
   summary: DashboardSummaryResponse;
   goals: DashboardGoalResponse[];
@@ -271,4 +291,6 @@ export interface DashboardResponse {
   latestRecords: RecordResponse[];
   topDeposits: RecordResponse[];
   topOutflows: RecordResponse[];
+  comparison?: DashboardComparisonResponse;
+  monthlyTrend: DashboardMonthlyTrendResponse[];
 }

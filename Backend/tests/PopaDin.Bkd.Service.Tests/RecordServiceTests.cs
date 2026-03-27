@@ -196,6 +196,51 @@ public class RecordServiceTests
         listRecords.UserId.Should().Be(UserId);
     }
 
+    [Fact]
+    public async Task GetRecordsAsync_WithAdvancedFilters_ShouldPassFiltersToRepository()
+    {
+        var listRecords = new ListRecords
+        {
+            Page = 1,
+            ItemsPerPage = 20,
+            Name = "Salary",
+            MinValue = 100,
+            MaxValue = 5000,
+            TagIds = [1, 2],
+            StartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2024, 1, 31, 0, 0, 0, DateTimeKind.Utc)
+        };
+        var expected = new PaginatedResult<Record> { Lines = [], Page = 1, TotalItems = 0 };
+        _recordRepository.GetRecordsAsync(Arg.Any<ListRecords>()).Returns(expected);
+
+        await _sut.GetRecordsAsync(listRecords, UserId);
+
+        await _recordRepository.Received(1).GetRecordsAsync(Arg.Is<ListRecords>(r =>
+            r.Name == "Salary" &&
+            r.MinValue == 100 &&
+            r.MaxValue == 5000 &&
+            r.TagIds != null && r.TagIds.Contains(1) && r.TagIds.Contains(2) &&
+            r.StartDate == listRecords.StartDate &&
+            r.EndDate == listRecords.EndDate &&
+            r.UserId == UserId));
+    }
+
+    [Fact]
+    public async Task GetRecordsAsync_WithPartialFilters_ShouldPreserveNullFilters()
+    {
+        var listRecords = new ListRecords { Page = 1, ItemsPerPage = 20, Name = "Test" };
+        var expected = new PaginatedResult<Record> { Lines = [], Page = 1, TotalItems = 0 };
+        _recordRepository.GetRecordsAsync(Arg.Any<ListRecords>()).Returns(expected);
+
+        await _sut.GetRecordsAsync(listRecords, UserId);
+
+        await _recordRepository.Received(1).GetRecordsAsync(Arg.Is<ListRecords>(r =>
+            r.Name == "Test" &&
+            r.MinValue == null &&
+            r.MaxValue == null &&
+            r.TagIds == null));
+    }
+
     #endregion
 
     #region FindRecordByIdAsync

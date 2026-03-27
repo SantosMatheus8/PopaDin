@@ -11,6 +11,7 @@ import { Pagination } from "../../components/Pagination";
 import { EmptyState } from "../../components/EmptyState";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { RecordForm } from "./RecordForm";
+import { RecordFilters } from "./RecordFilters";
 import { ExportModal } from "./ExportModal";
 import { ExportFiles } from "./ExportFiles";
 import { formatCurrency, formatDate } from "../../lib/format";
@@ -126,6 +127,8 @@ export default function RecordsPage() {
           </Button>
         </div>
       </div>
+
+      <RecordFilters params={params} onChange={setParams} />
 
       <Card className="p-0">
         {isLoading ? (
