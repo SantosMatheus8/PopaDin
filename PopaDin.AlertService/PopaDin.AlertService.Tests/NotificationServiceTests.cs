@@ -101,29 +101,29 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAlertNotificationAsync_GoalAboveType_ShouldSendCorrectEmail()
+    public async Task SendAlertNotificationAsync_BalanceAboveType_ShouldSendCorrectEmail()
     {
         var rule = new AlertRule
         {
             Id = "def456",
             UserId = 2,
-            Type = nameof(AlertRuleType.GOAL_ABOVE),
-            Channel = "goal@example.com",
+            Type = nameof(AlertRuleType.BALANCE_ABOVE),
+            Channel = "user@example.com",
             Threshold = 2000
         };
         var recordEvent = new RecordCreatedEvent
         {
             UserId = 2,
             Value = 500,
-            Operation = "Outflow",
-            NewBalance = 5000,
-            MonthlyExpenses = 2500
+            Operation = "Deposit",
+            NewBalance = 2500,
+            MonthlyExpenses = 0
         };
 
         await CreateService().SendAlertNotificationAsync(rule, recordEvent);
 
         await _emailSender.Received(1).SendAsync(Arg.Is<MimeMessage>(m =>
-            m.To.Mailboxes.Any(mb => mb.Address == "goal@example.com")));
+            m.To.Mailboxes.Any(mb => mb.Address == "user@example.com")));
     }
 
     [Fact]
@@ -148,23 +148,23 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendAlertNotificationAsync_GoalAboveType_ShouldPublishWithCorrectTitle()
+    public async Task SendAlertNotificationAsync_BalanceAboveType_ShouldPublishWithCorrectTitle()
     {
         var rule = new AlertRule
         {
             Id = "abc",
             UserId = 1,
-            Type = nameof(AlertRuleType.GOAL_ABOVE),
+            Type = nameof(AlertRuleType.BALANCE_ABOVE),
             Channel = "user@test.com",
             Threshold = 1000
         };
-        var recordEvent = new RecordCreatedEvent { UserId = 1, MonthlyExpenses = 1500 };
+        var recordEvent = new RecordCreatedEvent { UserId = 1, NewBalance = 1500 };
 
         await CreateService().SendAlertNotificationAsync(rule, recordEvent);
 
         await _notificationPublisher.Received(1).PublishAsync(
-            1, nameof(AlertRuleType.GOAL_ABOVE),
-            "Alerta de Meta Excedida",
+            1, nameof(AlertRuleType.BALANCE_ABOVE),
+            "Alerta de Saldo Alto",
             Arg.Any<string>(), Arg.Any<object>());
     }
 

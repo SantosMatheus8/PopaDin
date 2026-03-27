@@ -35,8 +35,8 @@ describe("AlertType", () => {
     expect(AlertType.BALANCE_BELOW).toBe(0);
   });
 
-  it("deve ter GOAL_ABOVE = 1", () => {
-    expect(AlertType.GOAL_ABOVE).toBe(1);
+  it("deve ter BALANCE_ABOVE = 1", () => {
+    expect(AlertType.BALANCE_ABOVE).toBe(1);
   });
 });
 
@@ -68,6 +68,6 @@ describe("FrequencyLabels", () => {
 describe("AlertTypeLabels", () => {
   it("deve ter labels para cada tipo de alerta", () => {
     expect(AlertTypeLabels[AlertType.BALANCE_BELOW]).toBe("Saldo abaixo de");
-    expect(AlertTypeLabels[AlertType.GOAL_ABOVE]).toBe("Meta acima de");
+    expect(AlertTypeLabels[AlertType.BALANCE_ABOVE]).toBe("Saldo acima de");
   });
 });

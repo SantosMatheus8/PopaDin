@@ -8,6 +8,6 @@ export interface NotificationEvent {
 
 export type NotificationType =
   | 'BALANCE_BELOW'
-  | 'GOAL_ABOVE'
+  | 'BALANCE_ABOVE'
   | 'EXPORT_COMPLETED'
   | 'RECORD_CREATED';

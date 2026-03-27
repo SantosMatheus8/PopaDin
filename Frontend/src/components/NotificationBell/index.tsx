@@ -6,14 +6,14 @@ import { formatDateTime } from "../../lib/format";
 
 const typeLabels: Record<string, string> = {
   BALANCE_BELOW: "Saldo Baixo",
-  GOAL_ABOVE: "Meta Atingida",
+  BALANCE_ABOVE: "Saldo Alto",
   EXPORT_COMPLETED: "Exportação Concluída",
   RECORD_CREATED: "Registro Criado",
 };
 
 const typeColors: Record<string, string> = {
   BALANCE_BELOW: "bg-red-500",
-  GOAL_ABOVE: "bg-amber-500",
+  BALANCE_ABOVE: "bg-amber-500",
   EXPORT_COMPLETED: "bg-green-500",
   RECORD_CREATED: "bg-blue-500",
 };

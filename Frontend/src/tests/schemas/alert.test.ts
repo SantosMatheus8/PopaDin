@@ -7,7 +7,7 @@ describe("alertSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("deve validar alerta GOAL_ABOVE", () => {
+  it("deve validar alerta BALANCE_ABOVE", () => {
     const result = alertSchema.safeParse({ type: 1, threshold: 1000 });
     expect(result.success).toBe(true);
   });
